@@ -6,6 +6,7 @@ import './LoginPage.css'
 const LoginPage = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
@@ -44,22 +45,28 @@ const LoginPage = () => {
           </div>
           <div className="form-group">
             <label>Парола</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="password-input-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Скрий парола" : "Покажи парола"}
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
           </div>
           <button type="submit" disabled={loading} className="btn-primary">
             {loading ? 'Влизане...' : 'Вход'}
           </button>
         </form>
-        <div className="login-info">
-          <p>Демо данни:</p>
-          <p>admin / admin123</p>
-          <p>receptionist / admin123</p>
-        </div>
+        
       </div>
     </div>
   )
