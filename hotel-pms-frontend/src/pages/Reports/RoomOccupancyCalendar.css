@@ -1,0 +1,315 @@
+.room-occupancy-calendar-page {
+  padding: 20px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.calendar-actions {
+  display: flex;
+  gap: 15px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.calendar-filters {
+  display: flex;
+  gap: 15px;
+  align-items: flex-end;
+}
+
+.calendar-filters .form-group {
+  margin-bottom: 0;
+}
+
+.calendar-filters label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.calendar-filters input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.btn-print {
+  padding: 10px 20px;
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-print:hover {
+  background-color: #229954;
+}
+
+.calendar-info {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.calendar-info p {
+  margin: 5px 0;
+  color: #34495e;
+}
+
+.calendar-table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.occupancy-calendar-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.occupancy-calendar-table thead {
+  background: #34495e;
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.occupancy-calendar-table th {
+  padding: 12px 8px;
+  text-align: center;
+  font-weight: 600;
+  border: 1px solid #2c3e50;
+}
+
+.room-column {
+  min-width: 120px;
+  position: sticky;
+  left: 0;
+  background: #34495e;
+  z-index: 11;
+}
+
+.date-column {
+  min-width: 80px;
+  max-width: 80px;
+}
+
+.date-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.date-day {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.date-weekday {
+  font-size: 11px;
+  opacity: 0.9;
+  text-transform: uppercase;
+}
+
+.room-cell {
+  padding: 12px;
+  background: #ecf0f1;
+  border: 1px solid #bdc3c7;
+  position: sticky;
+  left: 0;
+  z-index: 5;
+}
+
+.room-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.room-info strong {
+  font-size: 14px;
+  color: #2c3e50;
+}
+
+.room-type {
+  font-size: 11px;
+  color: #7f8c8d;
+  margin-top: 2px;
+}
+
+.status-cell {
+  padding: 4px;
+  text-align: center;
+  border: 1px solid #e0e0e0;
+  min-width: 80px;
+  height: 60px;
+  vertical-align: middle;
+  position: relative;
+}
+
+.status-cell.available {
+  background-color: #d5f4e6;
+}
+
+.status-cell.booked {
+  background-color: #fff3cd;
+}
+
+.status-cell.checked-in {
+  background-color: #cfe2ff;
+}
+
+.status-cell.checked-out {
+  background-color: #f8d7da;
+}
+
+.status-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-bottom: 4px;
+}
+
+.status-cell.booked .status-indicator {
+  background-color: #ffc107;
+}
+
+.status-cell.checked-in .status-indicator {
+  background-color: #0d6efd;
+}
+
+.status-cell.checked-out .status-indicator {
+  background-color: #dc3545;
+}
+
+.guest-name {
+  font-size: 10px;
+  color: #2c3e50;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.legend {
+  margin-top: 30px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.legend h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+.legend-items {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.legend-color.available {
+  background-color: #d5f4e6;
+}
+
+.legend-color.booked {
+  background-color: #fff3cd;
+}
+
+.legend-color.checked-in {
+  background-color: #cfe2ff;
+}
+
+.legend-color.checked-out {
+  background-color: #f8d7da;
+}
+
+/* Print Styles */
+@media print {
+  .calendar-header {
+    page-break-after: avoid;
+  }
+
+  .calendar-actions {
+    display: none;
+  }
+
+  .btn-print {
+    display: none;
+  }
+
+  .calendar-filters {
+    display: none;
+  }
+
+  .calendar-container {
+    page-break-inside: avoid;
+  }
+
+  .occupancy-calendar-table {
+    page-break-inside: auto;
+  }
+
+  .occupancy-calendar-table tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  .occupancy-calendar-table thead {
+    display: table-header-group;
+  }
+
+  .occupancy-calendar-table tbody {
+    display: table-row-group;
+  }
+
+  .print-legend {
+    page-break-before: always;
+  }
+
+  .room-occupancy-calendar-page {
+    padding: 0;
+  }
+}
+

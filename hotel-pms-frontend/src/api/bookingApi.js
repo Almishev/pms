@@ -1,0 +1,11 @@
+import api from './axios'
+
+export const getBookings = () => api.get('/bookings')
+export const getBookingById = (id) => api.get(`/bookings/${id}`)
+export const createBooking = (data) => api.post('/bookings', data)
+export const checkIn = (id) => api.post(`/bookings/${id}/check-in`)
+export const checkOut = (id) => api.post(`/bookings/${id}/check-out`)
+export const cancelBooking = (id) => api.post(`/bookings/${id}/cancel`)
+export const getBookingsByDateRange = (startDate, endDate) => 
+  api.get('/bookings/date-range', { params: { startDate, endDate } })
+
