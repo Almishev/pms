@@ -12,6 +12,7 @@ const Sidebar = () => {
     { path: '/bookings', label: 'Резервации', icon: '📅' },
     { path: '/bookings/new', label: 'Нова резервация', icon: '➕' },
     { path: '/payments', label: 'Плащания', icon: '💳' },
+    { path: '/reports/fiscal', label: 'Фискални отчети', icon: '🧾', adminOnly: true },
     { path: '/reports/occupancy', label: 'Отчет за заетост', icon: '📈' },
     { path: '/reports/room-calendar', label: 'Календар на стаите', icon: '📆' },
     { path: '/reports/nights', label: 'Отчет за нощувки', icon: '🌙' },
@@ -21,16 +22,18 @@ const Sidebar = () => {
   return (
     <aside className="sidebar">
       <nav className="sidebar-nav">
-        {menuItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`sidebar-link ${location.pathname === item.path ? 'active' : ''}`}
-          >
-            <span className="sidebar-icon">{item.icon}</span>
-            <span>{item.label}</span>
-          </Link>
-        ))}
+        {menuItems
+          .filter(item => !item.adminOnly || isAdmin)
+          .map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`sidebar-link ${location.pathname === item.path ? 'active' : ''}`}
+            >
+              <span className="sidebar-icon">{item.icon}</span>
+              <span>{item.label}</span>
+            </Link>
+          ))}
       </nav>
     </aside>
   )

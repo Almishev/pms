@@ -78,6 +78,17 @@ CREATE TABLE IF NOT EXISTS fiscal_receipt (
     status VARCHAR(20) CHECK (status IN ('OK','ERROR','STORNO'))
 );
 
+-- Fiscal Reports (Z and X reports history)
+CREATE TABLE IF NOT EXISTS fiscal_report (
+    id SERIAL PRIMARY KEY,
+    report_type VARCHAR(10) NOT NULL CHECK (report_type IN ('Z_REPORT','X_REPORT')),
+    report_number VARCHAR(50),
+    fiscal_date TIMESTAMP NOT NULL,
+    user_id INT NOT NULL REFERENCES users(id),
+    success BOOLEAN DEFAULT TRUE,
+    error_message VARCHAR(500)
+);
+
 -- Shift
 CREATE TABLE IF NOT EXISTS shift (
     id SERIAL PRIMARY KEY,
@@ -95,4 +106,6 @@ CREATE INDEX IF NOT EXISTS idx_booking_dates ON booking(check_in_date, check_out
 CREATE INDEX IF NOT EXISTS idx_stay_night_date ON stay_night(stay_date);
 CREATE INDEX IF NOT EXISTS idx_payment_date ON payment(payment_date);
 CREATE INDEX IF NOT EXISTS idx_payment_booking_id ON payment(booking_id);
+CREATE INDEX IF NOT EXISTS idx_fiscal_report_date ON fiscal_report(fiscal_date);
+CREATE INDEX IF NOT EXISTS idx_fiscal_report_type ON fiscal_report(report_type);
 
