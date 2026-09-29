@@ -26,6 +26,7 @@ services:
 
   # Backend Service
   backend:
+    image: ${DOCKERHUB_USER:-almishev}/hotel-pms-backend:${PMS_IMAGE_TAG:-latest}
     build:
       context: ./hotel-pms-backend
       dockerfile: Dockerfile
@@ -58,12 +59,13 @@ services:
 
   # Frontend Service
   frontend:
+    image: ${DOCKERHUB_USER:-almishev}/hotel-pms-frontend:${PMS_IMAGE_TAG:-latest}
     build:
       context: ./hotel-pms-frontend
       dockerfile: Dockerfile
     container_name: hotel-pms-frontend
     ports:
-      - "3000:80"
+      - "3003:80"
     depends_on:
       - backend
     restart: unless-stopped
