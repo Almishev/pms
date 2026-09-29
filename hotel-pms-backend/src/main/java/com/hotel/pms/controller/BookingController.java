@@ -1,6 +1,8 @@
 package com.hotel.pms.controller;
 
 import com.hotel.pms.model.dto.CreateBookingDto;
+import com.hotel.pms.model.dto.MoveBookingDto;
+import com.hotel.pms.model.dto.OpenFolioDto;
 import com.hotel.pms.model.entity.Booking;
 import com.hotel.pms.service.BookingService;
 import jakarta.validation.Valid;
@@ -9,6 +11,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -22,6 +25,11 @@ public class BookingController {
     @GetMapping
     public ResponseEntity<List<Booking>> getAllBookings() {
         return ResponseEntity.ok(bookingService.getAllBookings());
+    }
+
+    @GetMapping("/open-folios")
+    public ResponseEntity<List<OpenFolioDto>> getOpenFolios() {
+        return ResponseEntity.ok(bookingService.getOpenFolios());
     }
 
     @GetMapping("/{id}")
@@ -47,6 +55,18 @@ public class BookingController {
     @PostMapping("/{id}/cancel")
     public ResponseEntity<Booking> cancelBooking(@PathVariable Long id) {
         return ResponseEntity.ok(bookingService.cancelBooking(id));
+    }
+
+    @PutMapping("/{id}/stay")
+    public ResponseEntity<Booking> moveBooking(@PathVariable Long id, @Valid @RequestBody MoveBookingDto dto) {
+        return ResponseEntity.ok(bookingService.moveBooking(id, dto));
+    }
+
+    @PutMapping("/{id}/restaurant-charge")
+    public ResponseEntity<Booking> updateRestaurantCharge(
+            @PathVariable Long id,
+            @RequestParam BigDecimal restaurantCharge) {
+        return ResponseEntity.ok(bookingService.updateRestaurantCharge(id, restaurantCharge));
     }
 
     @GetMapping("/date-range")

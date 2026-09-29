@@ -29,6 +29,9 @@ public class Guest {
     @Column(name = "id_number", length = 30)
     private String idNumber;
 
+    @Column(length = 60)
+    private String country;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

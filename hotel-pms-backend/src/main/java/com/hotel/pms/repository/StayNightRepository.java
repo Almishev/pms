@@ -12,6 +12,8 @@ import java.util.List;
 @Repository
 public interface StayNightRepository extends JpaRepository<StayNight, Long> {
     List<StayNight> findByBookingId(Long bookingId);
+
+    void deleteByBookingId(Long bookingId);
     
     @Query("SELECT sn FROM StayNight sn WHERE sn.stayDate BETWEEN :startDate AND :endDate")
     List<StayNight> findByStayDateBetween(

@@ -9,15 +9,16 @@ const Sidebar = () => {
   const menuItems = [
     { path: '/dashboard', label: 'Табло', icon: '📊' },
     { path: '/rooms', label: 'Стаи', icon: '🛏️' },
-    { path: '/room-types', label: 'Типове стаи', icon: '🏷️' },
+    { path: '/room-types', label: 'Типове стаи', icon: '🏷️', adminOnly: true },
     { path: '/bookings', label: 'Резервации', icon: '📅' },
     { path: '/bookings/new', label: 'Нова резервация', icon: '➕' },
     { path: '/payments', label: 'Плащания', icon: '💳' },
     { path: '/reports/fiscal', label: 'Фискални отчети', icon: '🧾', adminOnly: true },
     { path: '/reports/occupancy', label: 'Отчет за заетост', icon: '📈' },
     { path: '/reports/room-calendar', label: 'Календар на стаите', icon: '📆' },
-    { path: '/reports/nights', label: 'Отчет за нощувки', icon: '🌙' },
-    { path: '/reports/revenue', label: 'Отчет за приходи', icon: '💰' },
+    { path: '/reports/nights', label: 'Начисления', icon: '🌙' },
+    { path: '/reports/revenue', label: 'Плащания', icon: '💰' },
+    { path: '/reports/nsi', label: 'Справка за НСИ', icon: '🏛️' },
   ]
 
   return (

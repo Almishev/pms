@@ -5,8 +5,13 @@
 
 .payment-container {
   display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 30px;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.payment-container.has-selection {
+  grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
 }
 
 .booking-list h2,
@@ -153,11 +158,20 @@
 }
 
 .booking-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.payment-container.has-selection .booking-cards {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  max-height: 600px;
+  max-height: calc(100vh - 320px);
   overflow-y: auto;
+}
+
+.payment-details {
+  min-width: 0;
 }
 
 .booking-card {
@@ -278,6 +292,33 @@
   font-size: 12px;
   color: #7f8c8d;
   font-style: italic;
+}
+
+.restaurant-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.restaurant-form input {
+  width: 120px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.btn-sm {
+  padding: 4px 8px;
+  font-size: 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-danger {
+  background: #e74c3c;
+  color: white;
 }
 
 .payments-list {

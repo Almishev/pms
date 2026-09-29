@@ -9,13 +9,14 @@ export const getRooms = (checkInDate, checkOutDate, includeInactive = false) => 
 export const getRoomById = (id) => api.get(`/rooms/${id}`)
 export const createRoom = (roomNumber, roomTypeId) => 
   api.post('/rooms', null, { params: { roomNumber, roomTypeId } })
-export const updateRoom = (id, data) => 
+export const updateRoom = (id, data) =>
   api.put(`/rooms/${id}`, null, { params: data })
 export const deleteRoom = (id) => api.delete(`/rooms/${id}`)
 export const updateRoomType = (id, data) => 
   api.put(`/rooms/types/${id}`, null, { params: data })
 export const deleteRoomType = (id) => api.delete(`/rooms/types/${id}`)
-export const getRoomTypes = () => api.get('/rooms/types')
+export const getRoomTypes = (includeInactive = false) =>
+  api.get('/rooms/types', { params: { includeInactive } })
 export const createRoomType = (name, capacity, basePrice) => 
   api.post('/rooms/types', null, { params: { name, capacity, basePrice } })
 

@@ -5,8 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 @Entity
 @Table(name = "room")
 @Data
@@ -23,15 +21,6 @@ public class Room {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "room_type_id", nullable = false)
     private RoomType roomType;
-
-    @Column(name = "nightly_charge", precision = 10, scale = 2)
-    private BigDecimal nightlyCharge = BigDecimal.ZERO;
-
-    @Column(name = "restaurant_charge", precision = 10, scale = 2)
-    private BigDecimal restaurantCharge = BigDecimal.ZERO;
-
-    @Column(name = "account_balance", precision = 10, scale = 2)
-    private BigDecimal accountBalance = BigDecimal.ZERO;
 
     @Column(nullable = false)
     private Boolean active = true;

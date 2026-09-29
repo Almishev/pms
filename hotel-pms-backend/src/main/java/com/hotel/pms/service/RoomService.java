@@ -49,17 +49,12 @@ public class RoomService {
         Room room = new Room();
         room.setRoomNumber(roomNumber);
         room.setRoomType(roomType);
-        room.setNightlyCharge(java.math.BigDecimal.ZERO);
-        room.setRestaurantCharge(java.math.BigDecimal.ZERO);
-        room.setAccountBalance(java.math.BigDecimal.ZERO);
         room.setActive(true);
 
         return roomRepository.save(room);
     }
 
-    public Room updateRoom(Long id, String roomNumber, Long roomTypeId, Boolean active,
-                          java.math.BigDecimal nightlyCharge, java.math.BigDecimal restaurantCharge,
-                          java.math.BigDecimal accountBalance) {
+    public Room updateRoom(Long id, String roomNumber, Long roomTypeId, Boolean active) {
         Room room = getRoomById(id);
 
         if (roomNumber != null && !roomNumber.trim().isEmpty()) {
@@ -80,20 +75,6 @@ public class RoomService {
 
         if (active != null) {
             room.setActive(active);
-        }
-
-        if (nightlyCharge != null) {
-            room.setNightlyCharge(nightlyCharge);
-        }
-
-        if (restaurantCharge != null) {
-            room.setRestaurantCharge(restaurantCharge);
-        }
-
-        if (accountBalance != null) {
-            room.setAccountBalance(accountBalance);
-        } else {
-            room.setAccountBalance(room.getNightlyCharge().add(room.getRestaurantCharge()));
         }
 
         return roomRepository.save(room);
@@ -170,7 +151,7 @@ public class RoomService {
                 .orElseThrow(() -> new BusinessException("Room type not found with id: " + id));
 
         if (roomRepository.existsByRoomTypeId(id)) {
-            throw new BusinessException("Cannot delete room type that is assigned to rooms. Deactivate it instead.");
+            throw new BusinessException("Не може да се изтрие тип, към който има стаи.");
         }
 
         roomTypeRepository.delete(roomType);

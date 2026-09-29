@@ -1,5 +1,6 @@
 package com.hotel.pms.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hotel.pms.model.enums.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -21,6 +22,7 @@ public class User {
     @Column(unique = true, nullable = false, length = 50)
     private String username;
 
+    @JsonIgnore
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 

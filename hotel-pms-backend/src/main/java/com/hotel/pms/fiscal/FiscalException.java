@@ -1,6 +1,6 @@
 package com.hotel.pms.fiscal;
 
-public class FiscalException extends Exception {
+public class FiscalException extends RuntimeException {
     public FiscalException(String message) {
         super(message);
     }

@@ -1,0 +1,8 @@
+[Unit]
+Description=Hotel PMS backup to the attached USB disk
+After=hotel-pms.service
+Wants=hotel-pms.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/hotel-pos/scripts/backup-to-usb.sh

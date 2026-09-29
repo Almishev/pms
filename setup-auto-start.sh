@@ -48,6 +48,16 @@ systemctl daemon-reload
 echo "✅ Активиране на автоматично стартиране..."
 systemctl enable hotel-pms
 
+# Бекъп всеки ден в 23:35. Persistent=true пуска пропуснатия час веднага след включване.
+if [ -f "$PROJECT_DIR/hotel-pms-backup.service" ] && [ -f "$PROJECT_DIR/hotel-pms-backup.timer" ]; then
+    echo "💾 Настройка на ежедневен бекъп към външен диск..."
+    cp "$PROJECT_DIR/hotel-pms-backup.service" "$SYSTEMD_DIR/hotel-pms-backup.service"
+    cp "$PROJECT_DIR/hotel-pms-backup.timer" "$SYSTEMD_DIR/hotel-pms-backup.timer"
+    chmod +x "$PROJECT_DIR/scripts/backup-to-usb.sh"
+    systemctl daemon-reload
+    systemctl enable --now hotel-pms-backup.timer
+fi
+
 # Стартиране на service
 echo "🚀 Стартиране на service..."
 systemctl start hotel-pms

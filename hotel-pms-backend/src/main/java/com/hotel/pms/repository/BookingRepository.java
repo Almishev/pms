@@ -17,7 +17,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     
     @Query("SELECT b FROM Booking b WHERE b.room.id = :roomId " +
            "AND b.status != 'CANCELLED' " +
-           "AND ((b.checkInDate <= :checkOutDate AND b.checkOutDate >= :checkInDate))")
+           "AND b.checkInDate < :checkOutDate AND b.checkOutDate > :checkInDate")
     List<Booking> findOverlappingBookings(
         @Param("roomId") Long roomId,
         @Param("checkInDate") LocalDate checkInDate,
@@ -27,7 +27,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT b FROM Booking b WHERE b.room.id = :roomId " +
            "AND b.status != 'CANCELLED' " +
            "AND b.id != :excludeBookingId " +
-           "AND ((b.checkInDate <= :checkOutDate AND b.checkOutDate >= :checkInDate))")
+           "AND b.checkInDate < :checkOutDate AND b.checkOutDate > :checkInDate")
     List<Booking> findOverlappingBookingsExcluding(
         @Param("roomId") Long roomId,
         @Param("checkInDate") LocalDate checkInDate,

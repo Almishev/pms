@@ -41,6 +41,7 @@ services:
       CORS_ALLOWED_ORIGINS: "*"
       LOGGING_LEVEL_COM_HOTEL_PMS: INFO
       LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: WARN
+      PMS_BACKUP_ENABLED: "false"
     ports:
       - "8085:8085"
     depends_on:

@@ -1,6 +1,5 @@
 package com.hotel.pms.controller;
 
-import com.hotel.pms.fiscal.FiscalException;
 import com.hotel.pms.model.dto.PaymentDto;
 import com.hotel.pms.model.entity.FiscalReceipt;
 import com.hotel.pms.model.entity.Payment;
@@ -21,7 +20,7 @@ public class PaymentController {
     private PaymentService paymentService;
 
     @PostMapping
-    public ResponseEntity<Payment> processPayment(@Valid @RequestBody PaymentDto dto) throws FiscalException {
+    public ResponseEntity<Payment> processPayment(@Valid @RequestBody PaymentDto dto) {
         return ResponseEntity.ok(paymentService.processPayment(dto));
     }
 
@@ -31,7 +30,7 @@ public class PaymentController {
     }
 
     @PostMapping("/{id}/storno")
-    public ResponseEntity<FiscalReceipt> stornoPayment(@PathVariable Long id) throws FiscalException {
+    public ResponseEntity<FiscalReceipt> stornoPayment(@PathVariable Long id) {
         return ResponseEntity.ok(paymentService.stornoPayment(id));
     }
 
@@ -42,7 +41,7 @@ public class PaymentController {
      */
     @PostMapping("/fiscal/z-report")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<com.hotel.pms.fiscal.FiscalResult> printZReport() throws FiscalException {
+    public ResponseEntity<com.hotel.pms.fiscal.FiscalResult> printZReport() {
         return ResponseEntity.ok(paymentService.printZReport());
     }
 
@@ -53,7 +52,7 @@ public class PaymentController {
      */
     @PostMapping("/fiscal/x-report")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<com.hotel.pms.fiscal.FiscalResult> printXReport() throws FiscalException {
+    public ResponseEntity<com.hotel.pms.fiscal.FiscalResult> printXReport() {
         return ResponseEntity.ok(paymentService.printXReport());
     }
 

@@ -9,6 +9,7 @@ import com.hotel.pms.model.entity.Booking;
 import com.hotel.pms.model.entity.FiscalReceipt;
 import com.hotel.pms.model.entity.FiscalReport;
 import com.hotel.pms.model.entity.Payment;
+import com.hotel.pms.model.entity.StayNight;
 import com.hotel.pms.model.entity.User;
 import com.hotel.pms.model.enums.FiscalReceiptStatus;
 import com.hotel.pms.model.enums.PaymentMethod;
@@ -16,6 +17,7 @@ import com.hotel.pms.repository.BookingRepository;
 import com.hotel.pms.repository.FiscalReceiptRepository;
 import com.hotel.pms.repository.FiscalReportRepository;
 import com.hotel.pms.repository.PaymentRepository;
+import com.hotel.pms.repository.StayNightRepository;
 import com.hotel.pms.repository.UserRepository;
 import com.hotel.pms.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,8 +52,11 @@ public class PaymentService {
     @Autowired
     private DatecsService datecsService;
 
+    @Autowired
+    private StayNightRepository stayNightRepository;
+
     @Transactional
-    public Payment processPayment(PaymentDto dto) throws FiscalException {
+    public Payment processPayment(PaymentDto dto) {
         Booking booking = bookingRepository.findById(dto.getBookingId())
                 .orElseThrow(() -> new BusinessException("Booking not found with id: " + dto.getBookingId()));
 
@@ -60,52 +64,42 @@ public class PaymentService {
             throw new BusinessException("Payment amount must be positive");
         }
 
-        // Get current user
+        BigDecimal remaining = remainingBalance(booking);
+        if (dto.getAmount().compareTo(remaining) > 0) {
+            throw new BusinessException("Payment amount exceeds the remaining balance");
+        }
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String username = auth.getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new BusinessException("User not found"));
 
-        // Create payment
         Payment payment = new Payment();
         payment.setBooking(booking);
         payment.setAmount(dto.getAmount());
         payment.setPaymentMethod(dto.getPaymentMethod());
+        payment.setReversed(false);
         payment.setUser(user);
 
         payment = paymentRepository.save(payment);
 
-        // Print fiscal receipt
-        try {
-            FiscalResult fiscalResult = datecsService.printReceipt(
-                    dto.getAmount(),
-                    dto.getPaymentMethod(),
-                    "Booking #" + booking.getId()
-            );
+        FiscalResult fiscalResult = datecsService.printReceipt(
+                dto.getAmount(),
+                dto.getPaymentMethod(),
+                "Booking #" + booking.getId()
+        );
 
-            if (fiscalResult.isSuccess()) {
-                FiscalReceipt fiscalReceipt = new FiscalReceipt();
-                fiscalReceipt.setPayment(payment);
-                fiscalReceipt.setReceiptNumber(fiscalResult.getReceiptNumber());
-                fiscalReceipt.setFiscalDate(fiscalResult.getFiscalDate());
-                fiscalReceipt.setTotalAmount(fiscalResult.getTotalAmount());
-                fiscalReceipt.setStatus(FiscalReceiptStatus.OK);
-                fiscalReceiptRepository.save(fiscalReceipt);
-            } else {
-                FiscalReceipt fiscalReceipt = new FiscalReceipt();
-                fiscalReceipt.setPayment(payment);
-                fiscalReceipt.setStatus(FiscalReceiptStatus.ERROR);
-                fiscalReceiptRepository.save(fiscalReceipt);
-                throw new FiscalException("Failed to print fiscal receipt: " + fiscalResult.getErrorMessage());
-            }
-        } catch (FiscalException e) {
-            // Log error but don't fail the payment
-            FiscalReceipt fiscalReceipt = new FiscalReceipt();
-            fiscalReceipt.setPayment(payment);
-            fiscalReceipt.setStatus(FiscalReceiptStatus.ERROR);
-            fiscalReceiptRepository.save(fiscalReceipt);
-            throw e;
+        if (!fiscalResult.isSuccess()) {
+            throw new FiscalException("Failed to print fiscal receipt: " + fiscalResult.getErrorMessage());
         }
+
+        FiscalReceipt fiscalReceipt = new FiscalReceipt();
+        fiscalReceipt.setPayment(payment);
+        fiscalReceipt.setReceiptNumber(fiscalResult.getReceiptNumber());
+        fiscalReceipt.setFiscalDate(fiscalResult.getFiscalDate());
+        fiscalReceipt.setTotalAmount(fiscalResult.getTotalAmount());
+        fiscalReceipt.setStatus(FiscalReceiptStatus.OK);
+        fiscalReceiptRepository.save(fiscalReceipt);
 
         return payment;
     }
@@ -115,29 +109,49 @@ public class PaymentService {
     }
 
     @Transactional
-    public FiscalReceipt stornoPayment(Long paymentId) throws FiscalException {
+    public FiscalReceipt stornoPayment(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new BusinessException("Payment not found with id: " + paymentId));
 
-        FiscalReceipt originalReceipt = fiscalReceiptRepository.findByPaymentId(paymentId);
-        if (originalReceipt == null) {
-            throw new BusinessException("Fiscal receipt not found for payment");
+        if (Boolean.TRUE.equals(payment.getReversed())) {
+            throw new BusinessException("Payment is already reversed");
         }
 
-        // Print storno receipt
+        FiscalReceipt originalReceipt = fiscalReceiptRepository.findByPaymentId(paymentId).stream()
+                .filter(receipt -> receipt.getStatus() == FiscalReceiptStatus.OK)
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("Fiscal receipt not found for payment"));
+
+        payment.setReversed(true);
+        paymentRepository.save(payment);
+
         FiscalResult stornoResult = datecsService.printStorno(originalReceipt.getReceiptNumber());
 
-        if (stornoResult.isSuccess()) {
-            FiscalReceipt stornoReceipt = new FiscalReceipt();
-            stornoReceipt.setPayment(payment);
-            stornoReceipt.setReceiptNumber(stornoResult.getReceiptNumber());
-            stornoReceipt.setFiscalDate(stornoResult.getFiscalDate());
-            stornoReceipt.setTotalAmount(stornoResult.getTotalAmount());
-            stornoReceipt.setStatus(FiscalReceiptStatus.STORNO);
-            return fiscalReceiptRepository.save(stornoReceipt);
-        } else {
+        if (!stornoResult.isSuccess()) {
             throw new FiscalException("Failed to print storno receipt");
         }
+
+        FiscalReceipt stornoReceipt = new FiscalReceipt();
+        stornoReceipt.setPayment(payment);
+        stornoReceipt.setReceiptNumber(stornoResult.getReceiptNumber());
+        stornoReceipt.setFiscalDate(stornoResult.getFiscalDate());
+        stornoReceipt.setTotalAmount(payment.getAmount());
+        stornoReceipt.setStatus(FiscalReceiptStatus.STORNO);
+        return fiscalReceiptRepository.save(stornoReceipt);
+    }
+
+    private BigDecimal remainingBalance(Booking booking) {
+        BigDecimal nights = stayNightRepository.findByBookingId(booking.getId()).stream()
+                .map(StayNight::getPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal restaurant = booking.getRestaurantCharge() == null
+                ? BigDecimal.ZERO
+                : booking.getRestaurantCharge();
+        BigDecimal paid = paymentRepository.findByBookingId(booking.getId()).stream()
+                .filter(payment -> !Boolean.TRUE.equals(payment.getReversed()))
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return nights.add(restaurant).subtract(paid);
     }
 
     /**
@@ -145,7 +159,7 @@ public class PaymentService {
      * Затваря дневния период на фискалния принтер
      */
     @Transactional
-    public FiscalResult printZReport() throws FiscalException {
+    public FiscalResult printZReport() {
         // Get current user
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
@@ -182,7 +196,7 @@ public class PaymentService {
      * НЕ затваря дневния период
      */
     @Transactional
-    public FiscalResult printXReport() throws FiscalException {
+    public FiscalResult printXReport() {
         // Get current user
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
@@ -234,16 +248,12 @@ public class PaymentService {
      */
     public FiscalReportDetailsDto generateReportPreview(FiscalReport.ReportType reportType) {
         LocalDate today = LocalDate.now();
+        LocalDateTime endOfDay = LocalDateTime.now();
         LocalDateTime startOfDay = today.atStartOfDay();
-        LocalDateTime endOfDay = LocalDateTime.now(); // Current time, not end of day
-        
-        // For X report, get payments since last Z report (or from start of day if no Z report)
-        if (reportType == FiscalReport.ReportType.X_REPORT) {
-            List<FiscalReport> lastZReports = fiscalReportRepository.findByReportTypeOrderByFiscalDateDesc(
-                    FiscalReport.ReportType.Z_REPORT);
-            if (!lastZReports.isEmpty()) {
-                startOfDay = lastZReports.get(0).getFiscalDate();
-            }
+        List<FiscalReport> lastZReports = fiscalReportRepository.findByReportTypeOrderByFiscalDateDesc(
+                FiscalReport.ReportType.Z_REPORT);
+        if (!lastZReports.isEmpty()) {
+            startOfDay = lastZReports.get(0).getFiscalDate();
         }
         
         // Get all payments for the period
@@ -308,21 +318,16 @@ public class PaymentService {
         FiscalReport report = fiscalReportRepository.findById(reportId)
                 .orElseThrow(() -> new BusinessException("Fiscal report not found with id: " + reportId));
         
-        // Get the date of the report
         LocalDate reportDate = report.getFiscalDate().toLocalDate();
         LocalDateTime startOfDay = reportDate.atStartOfDay();
-        LocalDateTime endOfDay = reportDate.atTime(LocalTime.MAX);
-        
-        // If it's an X report, get payments since last Z report before this X report
-        if (report.getReportType() == FiscalReport.ReportType.X_REPORT) {
-            List<FiscalReport> zReportsBefore = fiscalReportRepository.findByReportTypeOrderByFiscalDateDesc(
-                    FiscalReport.ReportType.Z_REPORT)
-                    .stream()
-                    .filter(z -> z.getFiscalDate().isBefore(report.getFiscalDate()))
-                    .collect(Collectors.toList());
-            if (!zReportsBefore.isEmpty()) {
-                startOfDay = zReportsBefore.get(0).getFiscalDate();
-            }
+        LocalDateTime endOfDay = report.getFiscalDate();
+        List<FiscalReport> zReportsBefore = fiscalReportRepository.findByReportTypeOrderByFiscalDateDesc(
+                FiscalReport.ReportType.Z_REPORT)
+                .stream()
+                .filter(z -> z.getFiscalDate().isBefore(report.getFiscalDate()))
+                .collect(Collectors.toList());
+        if (!zReportsBefore.isEmpty()) {
+            startOfDay = zReportsBefore.get(0).getFiscalDate();
         }
         
         // Get all payments for the period

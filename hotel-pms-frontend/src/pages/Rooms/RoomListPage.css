@@ -221,6 +221,13 @@
   font-size: 13px;
 }
 
+.account-line input {
+  width: 90px;
+  padding: 4px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
 .account-line.total {
   margin-top: 10px;
   padding-top: 8px;

@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily Hotel PMS backup at 23:35, including a catch-up after the computer was off
+
+[Timer]
+OnCalendar=*-*-* 23:35:00
+Persistent=true
+Unit=hotel-pms-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -6,233 +6,232 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 20px;
+  gap: 16px;
   flex-wrap: wrap;
-  gap: 20px;
+  margin-bottom: 8px;
 }
 
-.calendar-actions {
+.calendar-header h1 {
+  margin: 0 0 4px;
+}
+
+.tape-range {
+  margin: 0;
+  color: #5d6d7e;
+}
+
+.tape-toolbar {
   display: flex;
-  gap: 15px;
-  align-items: flex-end;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-.calendar-filters {
-  display: flex;
-  gap: 15px;
-  align-items: flex-end;
-}
-
-.calendar-filters .form-group {
-  margin-bottom: 0;
-}
-
-.calendar-filters label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-  font-size: 14px;
-}
-
-.calendar-filters input {
-  padding: 8px;
-  border: 1px solid #ddd;
+.tape-nav,
+.btn-print,
+.tape-panel-actions button {
+  padding: 8px 14px;
+  border: 1px solid #cfd6dc;
   border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
   font-size: 14px;
+}
+
+.tape-nav:hover,
+.tape-panel-actions button:hover {
+  background: #f4f7f8;
 }
 
 .btn-print {
-  padding: 10px 20px;
-  background-color: #27ae60;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+  background: #1e8449;
+  border-color: #1e8449;
+  color: #fff;
+}
+
+.tape-hint {
+  margin: 0 0 12px;
+  color: #5d6d7e;
   font-size: 14px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
-.btn-print:hover {
-  background-color: #229954;
-}
-
-.calendar-info {
-  margin-bottom: 20px;
-  padding: 15px;
-  background: #f8f9fa;
+.tape-error {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: #fdecea;
+  color: #922b21;
   border-radius: 4px;
 }
 
-.calendar-info p {
-  margin: 5px 0;
-  color: #34495e;
+.tape-scroll {
+  overflow: auto;
+  max-height: calc(100vh - 240px);
+  border: 1px solid #d5dde3;
+  border-radius: 6px;
+  background: #fff;
 }
 
-.calendar-table-wrapper {
-  overflow-x: auto;
-  margin-bottom: 20px;
+.tape-head,
+.tape-row {
+  display: grid;
+  grid-template-columns: 148px minmax(980px, 1fr);
+  min-width: max-content;
 }
 
-.occupancy-calendar-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.occupancy-calendar-table thead {
-  background: #34495e;
-  color: white;
+.tape-head {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 4;
+  background: #243342;
+  color: #fff;
 }
 
-.occupancy-calendar-table th {
-  padding: 12px 8px;
-  text-align: center;
-  font-weight: 600;
-  border: 1px solid #2c3e50;
-}
-
-.room-column {
-  min-width: 120px;
+.tape-room-head,
+.tape-room {
   position: sticky;
   left: 0;
-  background: #34495e;
-  z-index: 11;
-}
-
-.date-column {
-  min-width: 80px;
-  max-width: 80px;
-}
-
-.date-header {
+  z-index: 3;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  background: #243342;
+  color: #fff;
+  border-right: 1px solid #1b2836;
 }
 
-.date-day {
-  font-size: 16px;
-  font-weight: 600;
+.tape-room {
+  background: #f7f9fa;
+  color: #243342;
+  border-bottom: 1px solid #e4eaee;
 }
 
-.date-weekday {
-  font-size: 11px;
-  opacity: 0.9;
-  text-transform: uppercase;
-}
-
-.room-cell {
-  padding: 12px;
-  background: #ecf0f1;
-  border: 1px solid #bdc3c7;
-  position: sticky;
-  left: 0;
-  z-index: 5;
-}
-
-.room-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.room-info strong {
+.tape-room strong,
+.tape-date strong {
   font-size: 14px;
-  color: #2c3e50;
 }
 
-.room-type {
+.tape-room span,
+.tape-date span,
+.tape-date em {
   font-size: 11px;
-  color: #7f8c8d;
-  margin-top: 2px;
+  font-style: normal;
+  opacity: 0.8;
 }
 
-.status-cell {
-  padding: 4px;
-  text-align: center;
-  border: 1px solid #e0e0e0;
-  min-width: 80px;
-  height: 60px;
-  vertical-align: middle;
-  position: relative;
+.tape-dates,
+.tape-track {
+  display: grid;
 }
 
-.status-cell.available {
-  background-color: #d5f4e6;
+.tape-date,
+.tape-cell {
+  min-width: 72px;
 }
 
-.status-cell.booked {
-  background-color: #fff3cd;
-}
-
-.status-cell.checked-in {
-  background-color: #cfe2ff;
-}
-
-.status-cell.checked-out {
-  background-color: #f8d7da;
-}
-
-.status-content {
+.tape-date {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  text-transform: capitalize;
+}
+
+.tape-date.weekend {
+  background: #1c2a38;
+}
+
+.tape-date.today {
+  box-shadow: inset 2px 0 0 #f4d03f;
+  background: #1a5276;
+}
+
+.tape-row {
+  height: 56px;
+}
+
+.tape-track {
+  position: relative;
   height: 100%;
+  border-bottom: 1px solid #e4eaee;
 }
 
-.status-indicator {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  margin-bottom: 4px;
+.tape-cell {
+  grid-row: 1;
+  border: 0;
+  border-left: 1px solid #edf1f4;
+  background: #fff;
+  cursor: pointer;
+  padding: 0;
 }
 
-.status-cell.booked .status-indicator {
-  background-color: #ffc107;
+.tape-cell.weekend {
+  background: #f8f5f2;
 }
 
-.status-cell.checked-in .status-indicator {
-  background-color: #0d6efd;
+.tape-cell.today {
+  box-shadow: inset 2px 0 0 #1a5276;
+  background: #eaf3fb;
 }
 
-.status-cell.checked-out .status-indicator {
-  background-color: #dc3545;
+.tape-cell.past {
+  cursor: default;
 }
 
-.guest-name {
-  font-size: 10px;
-  color: #2c3e50;
-  font-weight: 500;
+.tape-bar {
+  z-index: 2;
+  align-self: center;
+  height: 36px;
+  margin: 0 3px;
+  border: 0;
+  border-radius: 6px;
+  color: #243342;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: left;
+  padding: 0 10px;
+  cursor: grab;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+
+.tape-bar span {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 100%;
+}
+
+.tape-bar.reserved {
+  background: #f6c445;
+}
+
+.tape-bar.in-house {
+  background: #1e9e63;
+  color: #fff;
+}
+
+.tape-bar.other {
+  background: #d5d8dc;
+}
+
+.tape-bar.dragging {
+  z-index: 6;
+  opacity: 0.9;
+  cursor: grabbing;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
 }
 
 .legend {
-  margin-top: 30px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 4px;
-}
-
-.legend h3 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  color: #2c3e50;
+  margin-top: 16px;
 }
 
 .legend-items {
   display: flex;
-  gap: 20px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
@@ -240,76 +239,98 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 14px;
 }
 
 .legend-color {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 4px;
-  border: 1px solid #ddd;
+  border: 1px solid #d5dde3;
 }
 
-.legend-color.available {
-  background-color: #d5f4e6;
+.legend-color.reserved {
+  background: #f6c445;
 }
 
-.legend-color.booked {
-  background-color: #fff3cd;
+.legend-color.in-house {
+  background: #1e9e63;
 }
 
-.legend-color.checked-in {
-  background-color: #cfe2ff;
+.legend-color.free {
+  background: #fff;
 }
 
-.legend-color.checked-out {
-  background-color: #f8d7da;
+.legend-color.today-mark {
+  background: #eaf3fb;
+  box-shadow: inset 2px 0 0 #1a5276;
 }
 
-/* Print Styles */
+.tape-panel {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 28, 36, 0.35);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 20;
+}
+
+.tape-panel-card {
+  width: min(380px, 100%);
+  height: 100%;
+  background: #fff;
+  padding: 24px;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.12);
+}
+
+.tape-panel-card h2 {
+  margin: 12px 0 8px;
+}
+
+.tape-panel-card p {
+  margin: 6px 0;
+}
+
+.tape-panel-close {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: #1a5276;
+  padding: 0;
+}
+
+.tape-status.reserved {
+  color: #9a7d0a;
+  font-weight: 600;
+}
+
+.tape-status.in-house {
+  color: #0e7a49;
+  font-weight: 600;
+}
+
+.tape-panel-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.tape-panel-actions .danger {
+  color: #922b21;
+  border-color: #e6b0aa;
+}
+
 @media print {
-  .calendar-header {
-    page-break-after: avoid;
-  }
-
-  .calendar-actions {
-    display: none;
-  }
-
+  .tape-toolbar,
+  .tape-hint,
+  .tape-panel,
   .btn-print {
     display: none;
   }
 
-  .calendar-filters {
-    display: none;
-  }
-
-  .calendar-container {
-    page-break-inside: avoid;
-  }
-
-  .occupancy-calendar-table {
-    page-break-inside: auto;
-  }
-
-  .occupancy-calendar-table tr {
-    page-break-inside: avoid;
-    page-break-after: auto;
-  }
-
-  .occupancy-calendar-table thead {
-    display: table-header-group;
-  }
-
-  .occupancy-calendar-table tbody {
-    display: table-row-group;
-  }
-
-  .print-legend {
-    page-break-before: always;
-  }
-
-  .room-occupancy-calendar-page {
-    padding: 0;
+  .tape-scroll {
+    overflow: visible;
+    max-height: none;
+    border: 0;
   }
 }
-

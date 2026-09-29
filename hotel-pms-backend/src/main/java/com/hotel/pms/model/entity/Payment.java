@@ -33,6 +33,9 @@ public class Payment {
     @Column(name = "payment_date")
     private LocalDateTime paymentDate;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean reversed = false;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;

@@ -14,13 +14,15 @@ import java.util.List;
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByBookingId(Long bookingId);
     
-    @Query("SELECT p FROM Payment p WHERE p.paymentDate BETWEEN :startDate AND :endDate")
+    @Query("SELECT p FROM Payment p WHERE p.paymentDate BETWEEN :startDate AND :endDate " +
+           "AND (p.reversed = false OR p.reversed IS NULL)")
     List<Payment> findByPaymentDateBetween(
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
     );
     
-    @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.paymentDate BETWEEN :startDate AND :endDate AND p.paymentMethod = :method")
+    @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.paymentDate BETWEEN :startDate AND :endDate " +
+           "AND p.paymentMethod = :method AND (p.reversed = false OR p.reversed IS NULL)")
     java.math.BigDecimal sumByPaymentDateBetweenAndPaymentMethod(
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate,

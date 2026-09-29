@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { createBooking } from '../../api/bookingApi'
-import { createGuest } from '../../api/guestApi'
 import { getRooms } from '../../api/roomApi'
 import './NewBookingPage.css'
 
 const NewBookingPage = () => {
+  const [searchParams] = useSearchParams()
   const [rooms, setRooms] = useState([])
   const [formData, setFormData] = useState({
-    roomId: '',
+    roomId: searchParams.get('roomId') || '',
     guestFirstName: '',
     guestLastName: '',
     guestPhone: '',
     guestIdNumber: '',
-    checkInDate: '',
-    checkOutDate: '',
+    guestCountry: 'България',
+    checkInDate: searchParams.get('checkIn') || '',
+    checkOutDate: searchParams.get('checkOut') || '',
     customPricePerNight: ''
   })
   const [selectedRoom, setSelectedRoom] = useState(null)
@@ -72,18 +73,13 @@ const NewBookingPage = () => {
     setLoading(true)
 
     try {
-      // Create guest first
-      const guestRes = await createGuest({
-        firstName: formData.guestFirstName,
-        lastName: formData.guestLastName,
-        phone: formData.guestPhone,
-        idNumber: formData.guestIdNumber
-      })
-
-      // Create booking
       const bookingData = {
         roomId: parseInt(formData.roomId),
-        guestId: guestRes.data.id,
+        guestFirstName: formData.guestFirstName,
+        guestLastName: formData.guestLastName,
+        guestPhone: formData.guestPhone,
+        guestIdNumber: formData.guestIdNumber,
+        guestCountry: formData.guestCountry,
         checkInDate: formData.checkInDate,
         checkOutDate: formData.checkOutDate
       }
@@ -148,6 +144,19 @@ const NewBookingPage = () => {
                 value={formData.guestIdNumber}
                 onChange={(e) => setFormData({...formData, guestIdNumber: e.target.value})}
               />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Държава</label>
+              <select
+                value={formData.guestCountry}
+                onChange={(e) => setFormData({...formData, guestCountry: e.target.value})}
+              >
+                {['България', 'Германия', 'Гърция', 'Румъния', 'Сърбия', 'Турция', 'Великобритания', 'Франция', 'Италия'].map(country => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>

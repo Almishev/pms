@@ -23,8 +23,10 @@ public class StayService {
 
     @Transactional
     public void generateStayNights(Booking booking, BigDecimal customPricePerNight) {
-        // Delete existing stay nights for this booking
-        stayNightRepository.findByBookingId(booking.getId()).forEach(stayNightRepository::delete);
+        // Deletes must hit the database before the new nights are inserted,
+        // otherwise the unique (booking, date) key rejects the overlapping rows.
+        stayNightRepository.deleteAll(stayNightRepository.findByBookingId(booking.getId()));
+        stayNightRepository.flush();
 
         LocalDate currentDate = booking.getCheckInDate();
         // Use custom price if provided, otherwise use room type base price
@@ -45,6 +47,11 @@ public class StayService {
 
     public List<StayNight> getStayNightsByBooking(Long bookingId) {
         return stayNightRepository.findByBookingId(bookingId);
+    }
+
+    @Transactional
+    public void deleteStayNights(Long bookingId) {
+        stayNightRepository.deleteByBookingId(bookingId);
     }
 
     public List<StayNight> getStayNightsByDateRange(LocalDate startDate, LocalDate endDate) {

@@ -16,6 +16,7 @@ import NightsReport from '../pages/Reports/NightsReport'
 import RevenueReport from '../pages/Reports/RevenueReport'
 import RoomOccupancyCalendar from '../pages/Reports/RoomOccupancyCalendar'
 import FiscalReportsPage from '../pages/Reports/FiscalReportsPage'
+import NsiReport from '../pages/Reports/NsiReport'
 
 // Layout
 import Layout from '../components/layout/Layout'
@@ -37,7 +38,11 @@ const AppRoutes = () => {
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="rooms" element={<RoomListPage />} />
-        <Route path="room-types" element={<RoomTypesPage />} />
+        <Route path="room-types" element={
+          <RoleRoute requiredRole="ADMIN">
+            <RoomTypesPage />
+          </RoleRoute>
+        } />
         <Route path="bookings" element={<BookingListPage />} />
         <Route path="bookings/new" element={<NewBookingPage />} />
         <Route path="payments" element={<PaymentPage />} />
@@ -45,6 +50,7 @@ const AppRoutes = () => {
         <Route path="reports/occupancy" element={<OccupancyReport />} />
         <Route path="reports/nights" element={<NightsReport />} />
         <Route path="reports/revenue" element={<RevenueReport />} />
+        <Route path="reports/nsi" element={<NsiReport />} />
         <Route path="reports/room-calendar" element={<RoomOccupancyCalendar />} />
       </Route>
     </Routes>

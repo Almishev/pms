@@ -24,9 +24,6 @@ CREATE TABLE IF NOT EXISTS room (
     id SERIAL PRIMARY KEY,
     room_number VARCHAR(10) UNIQUE NOT NULL,
     room_type_id INT NOT NULL REFERENCES room_type(id),
-    nightly_charge NUMERIC(10,2) DEFAULT 0,
-    restaurant_charge NUMERIC(10,2) DEFAULT 0,
-    account_balance NUMERIC(10,2) DEFAULT 0,
     active BOOLEAN DEFAULT TRUE
 );
 
@@ -47,6 +44,7 @@ CREATE TABLE IF NOT EXISTS booking (
     guest_id INT NOT NULL REFERENCES guest(id),
     check_in_date DATE NOT NULL,
     check_out_date DATE NOT NULL,
+    restaurant_charge NUMERIC(10,2) NOT NULL DEFAULT 0,
     status VARCHAR(20) NOT NULL CHECK (status IN ('BOOKED','CHECKED_IN','CHECKED_OUT','CANCELLED')),
     created_by INT REFERENCES users(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -67,6 +65,7 @@ CREATE TABLE IF NOT EXISTS payment (
     booking_id INT NOT NULL REFERENCES booking(id),
     amount NUMERIC(10,2) NOT NULL,
     payment_method VARCHAR(10) NOT NULL CHECK (payment_method IN ('CASH','CARD')),
+    reversed BOOLEAN NOT NULL DEFAULT FALSE,
     payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     user_id INT REFERENCES users(id)
 );

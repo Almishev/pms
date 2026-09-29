@@ -5,35 +5,18 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateBookingDto {
+public class MoveBookingDto {
     @NotNull(message = "Room ID is required")
     private Long roomId;
-
-    private Long guestId;
-
-    private String guestFirstName;
-
-    private String guestLastName;
-
-    private String guestPhone;
-
-    private String guestIdNumber;
-
-    private String guestCountry;
 
     @NotNull(message = "Check-in date is required")
     private LocalDate checkInDate;
 
     @NotNull(message = "Check-out date is required")
     private LocalDate checkOutDate;
-
-    // Optional: custom price per night (if not provided, uses room type base price)
-    private BigDecimal customPricePerNight;
 }
-

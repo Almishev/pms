@@ -49,12 +49,8 @@ public class RoomController {
             @PathVariable Long id,
             @RequestParam(required = false) String roomNumber,
             @RequestParam(required = false) Long roomTypeId,
-            @RequestParam(required = false) Boolean active,
-            @RequestParam(required = false) java.math.BigDecimal nightlyCharge,
-            @RequestParam(required = false) java.math.BigDecimal restaurantCharge,
-            @RequestParam(required = false) java.math.BigDecimal accountBalance) {
-        return ResponseEntity.ok(roomService.updateRoom(id, roomNumber, roomTypeId, active,
-                nightlyCharge, restaurantCharge, accountBalance));
+            @RequestParam(required = false) Boolean active) {
+        return ResponseEntity.ok(roomService.updateRoom(id, roomNumber, roomTypeId, active));
     }
 
     @DeleteMapping("/{id}")
@@ -65,8 +61,9 @@ public class RoomController {
     }
 
     @GetMapping("/types")
-    public ResponseEntity<List<RoomType>> getAllRoomTypes() {
-        return ResponseEntity.ok(roomService.getActiveRoomTypes());
+    public ResponseEntity<List<RoomType>> getAllRoomTypes(
+            @RequestParam(required = false, defaultValue = "false") boolean includeInactive) {
+        return ResponseEntity.ok(includeInactive ? roomService.getAllRoomTypes() : roomService.getActiveRoomTypes());
     }
 
     @PostMapping("/types")

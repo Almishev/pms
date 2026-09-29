@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface FiscalReceiptRepository extends JpaRepository<FiscalReceipt, Long> {
-    FiscalReceipt findByPaymentId(Long paymentId);
+    java.util.List<FiscalReceipt> findByPaymentId(Long paymentId);
 }
 

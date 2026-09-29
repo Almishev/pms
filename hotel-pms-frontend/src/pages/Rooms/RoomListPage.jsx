@@ -9,6 +9,7 @@ import {
   updateRoomType,
   deleteRoomType
 } from '../../api/roomApi'
+import { getOpenFolios, updateRestaurantCharge } from '../../api/bookingApi'
 import { useAuth } from '../../auth/AuthContext'
 import './RoomListPage.css'
 
@@ -21,8 +22,11 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
   const [showInactiveRooms, setShowInactiveRooms] = useState(false)
   const [editingRoomId, setEditingRoomId] = useState(null)
   const [editingTypeId, setEditingTypeId] = useState(null)
+  const [folios, setFolios] = useState([])
+  const [restaurantDrafts, setRestaurantDrafts] = useState({})
+  const [folioError, setFolioError] = useState('')
   const [formData, setFormData] = useState({ roomNumber: '', roomTypeId: '' })
-  const [editFormData, setEditFormData] = useState({ roomNumber: '', roomTypeId: '', nightlyCharge: '0', restaurantCharge: '0', accountBalance: '0' })
+  const [editFormData, setEditFormData] = useState({ roomNumber: '', roomTypeId: '' })
   const [typeFormData, setTypeFormData] = useState({ name: '', capacity: '', basePrice: '' })
   const [editTypeFormData, setEditTypeFormData] = useState({ name: '', capacity: '', basePrice: '' })
   const [error, setError] = useState('')
@@ -40,12 +44,17 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
 
   const loadData = async () => {
     try {
-      const [roomsRes, typesRes] = await Promise.all([
+      const [roomsRes, typesRes, foliosRes] = await Promise.all([
         getRooms(undefined, undefined, showInactiveRooms || roomTypeOnly),
-        getRoomTypes()
+        getRoomTypes(true),
+        roomTypeOnly ? Promise.resolve({ data: [] }) : getOpenFolios()
       ])
       setRooms(roomsRes.data)
       setRoomTypes(typesRes.data)
+      setFolios(foliosRes.data)
+      setRestaurantDrafts(Object.fromEntries(
+        foliosRes.data.map(folio => [folio.bookingId, String(folio.restaurantCharge ?? 0)])
+      ))
     } catch (error) {
       console.error('Error loading rooms:', error)
     } finally {
@@ -107,10 +116,7 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
     setEditingRoomId(room.id)
     setEditFormData({
       roomNumber: room.roomNumber,
-      roomTypeId: String(room.roomType.id),
-      nightlyCharge: room.nightlyCharge ?? '0',
-      restaurantCharge: room.restaurantCharge ?? '0',
-      accountBalance: room.accountBalance ?? '0'
+      roomTypeId: String(room.roomType.id)
     })
     setEditError('')
     setEditing(true)
@@ -128,14 +134,11 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
     try {
       await updateRoom(editingRoomId, {
         roomNumber: editFormData.roomNumber,
-        roomTypeId: parseInt(editFormData.roomTypeId),
-        nightlyCharge: parseFloat(editFormData.nightlyCharge || 0),
-        restaurantCharge: parseFloat(editFormData.restaurantCharge || 0),
-        accountBalance: parseFloat(editFormData.accountBalance || 0)
+        roomTypeId: parseInt(editFormData.roomTypeId)
       })
       setEditingRoomId(null)
       setEditing(false)
-      setEditFormData({ roomNumber: '', roomTypeId: '', nightlyCharge: '0', restaurantCharge: '0', accountBalance: '0' })
+      setEditFormData({ roomNumber: '', roomTypeId: '' })
       await loadData()
     } catch (err) {
       setEditError(err.response?.data?.error || 'Неуспешно редактиране на стая')
@@ -199,15 +202,6 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
     }
   }
 
-  const handleToggleRoomTypeActive = async (roomType) => {
-    try {
-      await updateRoomType(roomType.id, { active: !roomType.active })
-      await loadData()
-    } catch (err) {
-      setTypeError(err.response?.data?.error || 'Неуспешна промяна на тип стая')
-    }
-  }
-
   const handleDeleteRoomType = async (roomType) => {
     if (!window.confirm(`Сигурни ли сте, че искате да изтриете тип стая ${roomType.name}?`)) {
       return
@@ -218,6 +212,22 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
       await loadData()
     } catch (err) {
       setTypeError(err.response?.data?.error || 'Неуспешно изтриване на тип стая')
+    }
+  }
+
+  const handleRestaurantSave = async (folio) => {
+    setFolioError('')
+    const amount = parseFloat(restaurantDrafts[folio.bookingId])
+    if (Number.isNaN(amount) || amount < 0) {
+      setFolioError('Ресторантът не може да е отрицателен')
+      return
+    }
+
+    try {
+      await updateRestaurantCharge(folio.bookingId, amount)
+      await loadData()
+    } catch (err) {
+      setFolioError(err.response?.data?.error || 'Неуспешна промяна на ресторанта')
     }
   }
 
@@ -347,19 +357,21 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
         </div>
       )}
 
+      {isAdmin && roomTypeOnly && typeError && !showTypeForm && !editingType && (
+        <div className="error-message">{typeError}</div>
+      )}
+
       {isAdmin && roomTypeOnly && roomTypes.length > 0 && (
         <div className="room-type-list">
           {roomTypes.map(roomType => (
-            <div key={roomType.id} className={`room-type-chip ${roomType.active ? '' : 'inactive'}`}>
+            <div key={roomType.id} className="room-type-chip">
               <div>
                 <strong>{roomType.name}</strong>
                 <span>{roomType.capacity} гости · €{roomType.basePrice}/нощ</span>
               </div>
               <div className="room-actions room-type-actions">
                 <button type="button" className="btn-edit" onClick={() => handleEditType(roomType)}>Редактирай</button>
-                <button type="button" className="btn-toggle" onClick={() => handleToggleRoomTypeActive(roomType)}>
-                  {roomType.active ? 'Деактивирай' : 'Активирай'}
-                </button>
+                <button type="button" className="btn-delete" onClick={() => handleDeleteRoomType(roomType)}>Изтрий</button>
               </div>
             </div>
           ))}
@@ -447,44 +459,12 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
                 ))}
               </select>
             </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Нощувки (€)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={editFormData.nightlyCharge}
-                  onChange={(e) => setEditFormData({ ...editFormData, nightlyCharge: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label>Ресторант (€)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={editFormData.restaurantCharge}
-                  onChange={(e) => setEditFormData({ ...editFormData, restaurantCharge: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label>Сметка общо (€)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={editFormData.accountBalance}
-                onChange={(e) => setEditFormData({ ...editFormData, accountBalance: e.target.value })}
-              />
-            </div>
             <div className="action-row">
               <button type="submit" className="btn-primary">Запази</button>
               <button type="button" className="btn-secondary" onClick={() => {
                 setEditing(false)
                 setEditingRoomId(null)
-                setEditFormData({ roomNumber: '', roomTypeId: '', nightlyCharge: '0', restaurantCharge: '0', accountBalance: '0' })
+                setEditFormData({ roomNumber: '', roomTypeId: '' })
                 setEditError('')
               }}>
                 Отказ
@@ -494,6 +474,8 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
         </div>
       )}
       
+      {folioError && <div className="error-message">{folioError}</div>}
+
       {!roomTypeOnly && (
         <div className="room-grid">
           {rooms.map(room => (
@@ -510,21 +492,48 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
                 <p><strong>Цена:</strong> €{room.roomType.basePrice}/нощ</p>
               </div>
 
-              <div className="room-account">
-                <h4>Сметка</h4>
-                <div className="account-line">
-                  <span>Нощувки</span>
-                  <strong>€{Number(room.nightlyCharge || 0).toFixed(2)}</strong>
-                </div>
-                <div className="account-line">
-                  <span>Ресторант</span>
-                  <strong>€{Number(room.restaurantCharge || 0).toFixed(2)}</strong>
-                </div>
-                <div className="account-line total">
-                  <span>Общо</span>
-                  <strong>€{Number(room.accountBalance || (Number(room.nightlyCharge || 0) + Number(room.restaurantCharge || 0))).toFixed(2)}</strong>
-                </div>
-              </div>
+              {(() => {
+                const folio = folios.find(item => item.roomId === room.id)
+                if (!folio) {
+                  return (
+                    <div className="room-account">
+                      <h4>Сметка</h4>
+                      <p>Няма настанена резервация</p>
+                    </div>
+                  )
+                }
+                const restaurant = parseFloat(restaurantDrafts[folio.bookingId] || 0)
+                const total = Number(folio.nightsTotal || 0) + (Number.isNaN(restaurant) ? 0 : restaurant)
+                return (
+                  <div className="room-account">
+                    <h4>Сметка · {folio.guestName}</h4>
+                    <div className="account-line">
+                      <span>Нощувки</span>
+                      <strong>€{Number(folio.nightsTotal || 0).toFixed(2)}</strong>
+                    </div>
+                    <div className="account-line">
+                      <span>Ресторант</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={restaurantDrafts[folio.bookingId] ?? ''}
+                        onChange={(e) => setRestaurantDrafts({
+                          ...restaurantDrafts,
+                          [folio.bookingId]: e.target.value
+                        })}
+                      />
+                    </div>
+                    <div className="account-line total">
+                      <span>Общо</span>
+                      <strong>€{total.toFixed(2)}</strong>
+                    </div>
+                    <button type="button" className="btn-edit" onClick={() => handleRestaurantSave(folio)}>
+                      Запази ресторант
+                    </button>
+                  </div>
+                )
+              })()}
               {isAdmin && (
                 <div className="room-actions">
                   <button type="button" className="btn-edit" onClick={() => handleEditRoom(room)}>

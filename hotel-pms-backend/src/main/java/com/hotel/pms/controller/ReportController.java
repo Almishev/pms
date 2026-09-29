@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.Map;
 
 @RestController
@@ -35,6 +36,11 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         return ResponseEntity.ok(reportService.getNightsReport(startDate, endDate));
+    }
+
+    @GetMapping("/nsi")
+    public ResponseEntity<Map<String, Object>> getNsiReport(@RequestParam String month) {
+        return ResponseEntity.ok(reportService.getNsiReport(YearMonth.parse(month)));
     }
 
     @GetMapping("/room-occupancy-calendar")
