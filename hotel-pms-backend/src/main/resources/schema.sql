@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
 -- Room Types
 CREATE TABLE IF NOT EXISTS room_type (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(50) NOT NULL,
+    name VARCHAR(50) NOT NULL UNIQUE,
     capacity INT NOT NULL,
     base_price NUMERIC(10,2) NOT NULL,
     active BOOLEAN DEFAULT TRUE
@@ -24,6 +24,9 @@ CREATE TABLE IF NOT EXISTS room (
     id SERIAL PRIMARY KEY,
     room_number VARCHAR(10) UNIQUE NOT NULL,
     room_type_id INT NOT NULL REFERENCES room_type(id),
+    nightly_charge NUMERIC(10,2) DEFAULT 0,
+    restaurant_charge NUMERIC(10,2) DEFAULT 0,
+    account_balance NUMERIC(10,2) DEFAULT 0,
     active BOOLEAN DEFAULT TRUE
 );
 

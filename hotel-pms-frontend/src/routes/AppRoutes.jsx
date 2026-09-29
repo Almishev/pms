@@ -7,6 +7,7 @@ import RoleRoute from '../auth/RoleRoute'
 import LoginPage from '../pages/Login/LoginPage'
 import DashboardPage from '../pages/Dashboard/DashboardPage'
 import RoomListPage from '../pages/Rooms/RoomListPage'
+import RoomTypesPage from '../pages/Rooms/RoomTypesPage'
 import BookingListPage from '../pages/Bookings/BookingListPage'
 import NewBookingPage from '../pages/Bookings/NewBookingPage'
 import PaymentPage from '../pages/Payments/PaymentPage'
@@ -36,6 +37,7 @@ const AppRoutes = () => {
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="rooms" element={<RoomListPage />} />
+        <Route path="room-types" element={<RoomTypesPage />} />
         <Route path="bookings" element={<BookingListPage />} />
         <Route path="bookings/new" element={<NewBookingPage />} />
         <Route path="payments" element={<PaymentPage />} />

@@ -22,11 +22,12 @@ public class RoomController {
     @GetMapping
     public ResponseEntity<List<Room>> getAllRooms(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkInDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOutDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOutDate,
+            @RequestParam(required = false, defaultValue = "false") boolean includeInactive) {
         if (checkInDate != null && checkOutDate != null) {
             return ResponseEntity.ok(roomService.getAvailableRooms(checkInDate, checkOutDate));
         }
-        return ResponseEntity.ok(roomService.getActiveRooms());
+        return ResponseEntity.ok(includeInactive ? roomService.getAllRooms() : roomService.getActiveRooms());
     }
 
     @GetMapping("/{id}")
@@ -48,8 +49,19 @@ public class RoomController {
             @PathVariable Long id,
             @RequestParam(required = false) String roomNumber,
             @RequestParam(required = false) Long roomTypeId,
-            @RequestParam(required = false) Boolean active) {
-        return ResponseEntity.ok(roomService.updateRoom(id, roomNumber, roomTypeId, active));
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) java.math.BigDecimal nightlyCharge,
+            @RequestParam(required = false) java.math.BigDecimal restaurantCharge,
+            @RequestParam(required = false) java.math.BigDecimal accountBalance) {
+        return ResponseEntity.ok(roomService.updateRoom(id, roomNumber, roomTypeId, active,
+                nightlyCharge, restaurantCharge, accountBalance));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteRoom(@PathVariable Long id) {
+        roomService.deleteRoom(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/types")
@@ -64,6 +76,24 @@ public class RoomController {
             @RequestParam Integer capacity,
             @RequestParam java.math.BigDecimal basePrice) {
         return ResponseEntity.ok(roomService.createRoomType(name, capacity, basePrice));
+    }
+
+    @PutMapping("/types/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<RoomType> updateRoomType(
+            @PathVariable Long id,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Integer capacity,
+            @RequestParam(required = false) java.math.BigDecimal basePrice,
+            @RequestParam(required = false) Boolean active) {
+        return ResponseEntity.ok(roomService.updateRoomType(id, name, capacity, basePrice, active));
+    }
+
+    @DeleteMapping("/types/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteRoomType(@PathVariable Long id) {
+        roomService.deleteRoomType(id);
+        return ResponseEntity.noContent().build();
     }
 }
 

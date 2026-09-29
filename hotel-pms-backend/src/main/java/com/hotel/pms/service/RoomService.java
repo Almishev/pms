@@ -49,29 +49,64 @@ public class RoomService {
         Room room = new Room();
         room.setRoomNumber(roomNumber);
         room.setRoomType(roomType);
+        room.setNightlyCharge(java.math.BigDecimal.ZERO);
+        room.setRestaurantCharge(java.math.BigDecimal.ZERO);
+        room.setAccountBalance(java.math.BigDecimal.ZERO);
         room.setActive(true);
 
         return roomRepository.save(room);
     }
 
-    public Room updateRoom(Long id, String roomNumber, Long roomTypeId, Boolean active) {
+    public Room updateRoom(Long id, String roomNumber, Long roomTypeId, Boolean active,
+                          java.math.BigDecimal nightlyCharge, java.math.BigDecimal restaurantCharge,
+                          java.math.BigDecimal accountBalance) {
         Room room = getRoomById(id);
-        RoomType roomType = roomTypeRepository.findById(roomTypeId)
-                .orElseThrow(() -> new BusinessException("Room type not found with id: " + roomTypeId));
 
-        if (!room.getRoomNumber().equals(roomNumber)) {
-            if (roomRepository.findByRoomNumber(roomNumber).isPresent()) {
-                throw new BusinessException("Room number already exists: " + roomNumber);
+        if (roomNumber != null && !roomNumber.trim().isEmpty()) {
+            String normalizedRoomNumber = roomNumber.trim();
+            if (!room.getRoomNumber().equals(normalizedRoomNumber)) {
+                if (roomRepository.findByRoomNumber(normalizedRoomNumber).isPresent()) {
+                    throw new BusinessException("Room number already exists: " + normalizedRoomNumber);
+                }
+                room.setRoomNumber(normalizedRoomNumber);
             }
-            room.setRoomNumber(roomNumber);
         }
 
-        room.setRoomType(roomType);
+        if (roomTypeId != null) {
+            RoomType roomType = roomTypeRepository.findById(roomTypeId)
+                    .orElseThrow(() -> new BusinessException("Room type not found with id: " + roomTypeId));
+            room.setRoomType(roomType);
+        }
+
         if (active != null) {
             room.setActive(active);
         }
 
+        if (nightlyCharge != null) {
+            room.setNightlyCharge(nightlyCharge);
+        }
+
+        if (restaurantCharge != null) {
+            room.setRestaurantCharge(restaurantCharge);
+        }
+
+        if (accountBalance != null) {
+            room.setAccountBalance(accountBalance);
+        } else {
+            room.setAccountBalance(room.getNightlyCharge().add(room.getRestaurantCharge()));
+        }
+
         return roomRepository.save(room);
+    }
+
+    public void deleteRoom(Long id) {
+        Room room = getRoomById(id);
+
+        if (bookingRepository.existsByRoomId(id)) {
+            throw new BusinessException("Cannot delete room with active bookings. Deactivate it instead.");
+        }
+
+        roomRepository.delete(room);
     }
 
     public List<RoomType> getAllRoomTypes() {
@@ -83,13 +118,62 @@ public class RoomService {
     }
 
     public RoomType createRoomType(String name, Integer capacity, java.math.BigDecimal basePrice) {
+        String normalizedName = name == null ? null : name.trim();
+        if (normalizedName == null || normalizedName.isEmpty()) {
+            throw new BusinessException("Room type name is required.");
+        }
+
+        if (roomTypeRepository.findByNameIgnoreCase(normalizedName).isPresent()) {
+            throw new BusinessException("Room type already exists: " + normalizedName);
+        }
+
         RoomType roomType = new RoomType();
-        roomType.setName(name);
+        roomType.setName(normalizedName);
         roomType.setCapacity(capacity);
         roomType.setBasePrice(basePrice);
         roomType.setActive(true);
 
         return roomTypeRepository.save(roomType);
+    }
+
+    public RoomType updateRoomType(Long id, String name, Integer capacity, java.math.BigDecimal basePrice, Boolean active) {
+        RoomType roomType = roomTypeRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Room type not found with id: " + id));
+
+        if (name != null && !name.trim().isEmpty()) {
+            String normalizedName = name.trim();
+            if (!normalizedName.equalsIgnoreCase(roomType.getName())
+                    && roomTypeRepository.findByNameIgnoreCase(normalizedName).isPresent()) {
+                throw new BusinessException("Room type already exists: " + normalizedName);
+            }
+
+            roomType.setName(normalizedName);
+        }
+
+        if (capacity != null) {
+            roomType.setCapacity(capacity);
+        }
+
+        if (basePrice != null) {
+            roomType.setBasePrice(basePrice);
+        }
+
+        if (active != null) {
+            roomType.setActive(active);
+        }
+
+        return roomTypeRepository.save(roomType);
+    }
+
+    public void deleteRoomType(Long id) {
+        RoomType roomType = roomTypeRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Room type not found with id: " + id));
+
+        if (roomRepository.existsByRoomTypeId(id)) {
+            throw new BusinessException("Cannot delete room type that is assigned to rooms. Deactivate it instead.");
+        }
+
+        roomTypeRepository.delete(roomType);
     }
 
     public List<Room> getAvailableRooms(LocalDate checkInDate, LocalDate checkOutDate) {

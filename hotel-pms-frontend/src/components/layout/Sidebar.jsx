@@ -9,6 +9,7 @@ const Sidebar = () => {
   const menuItems = [
     { path: '/dashboard', label: 'Табло', icon: '📊' },
     { path: '/rooms', label: 'Стаи', icon: '🛏️' },
+    { path: '/room-types', label: 'Типове стаи', icon: '🏷️' },
     { path: '/bookings', label: 'Резервации', icon: '📅' },
     { path: '/bookings/new', label: 'Нова резервация', icon: '➕' },
     { path: '/payments', label: 'Плащания', icon: '💳' },

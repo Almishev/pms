@@ -105,6 +105,42 @@
   cursor: not-allowed;
 }
 
+.action-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.room-type-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.room-type-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: white;
+  border: 1px solid #dfe6e9;
+  border-radius: 10px;
+  padding: 12px 14px;
+  min-width: 220px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.room-type-chip.inactive {
+  opacity: 0.65;
+}
+
+.room-type-chip div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .room-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -162,5 +198,74 @@
 .room-details p {
   margin: 8px 0;
   color: #34495e;
+}
+
+.room-account {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+}
+
+.room-account h4 {
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+  font-size: 15px;
+}
+
+.account-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  color: #34495e;
+  font-size: 13px;
+}
+
+.account-line.total {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #edf2f7;
+  font-weight: 700;
+  color: #1d3557;
+}
+
+.room-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.room-actions button {
+  border: none;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  flex: 1;
+}
+
+.room-type-actions {
+  margin-top: 0;
+}
+
+.room-actions button:hover {
+  opacity: 0.9;
+}
+
+.btn-edit {
+  background-color: #3498db;
+  color: white;
+}
+
+.btn-toggle {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.btn-delete {
+  background-color: #e74c3c;
+  color: white;
 }
 

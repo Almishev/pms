@@ -1,30 +1,47 @@
 import { useEffect, useState } from 'react'
-import { getRooms, getRoomTypes, createRoom, createRoomType } from '../../api/roomApi'
+import {
+  getRooms,
+  getRoomTypes,
+  createRoom,
+  createRoomType,
+  updateRoom,
+  deleteRoom,
+  updateRoomType,
+  deleteRoomType
+} from '../../api/roomApi'
 import { useAuth } from '../../auth/AuthContext'
 import './RoomListPage.css'
 
-const RoomListPage = () => {
+const RoomListPage = ({ roomTypeOnly = false }) => {
   const [rooms, setRooms] = useState([])
   const [roomTypes, setRoomTypes] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [showTypeForm, setShowTypeForm] = useState(false)
+  const [showInactiveRooms, setShowInactiveRooms] = useState(false)
+  const [editingRoomId, setEditingRoomId] = useState(null)
+  const [editingTypeId, setEditingTypeId] = useState(null)
   const [formData, setFormData] = useState({ roomNumber: '', roomTypeId: '' })
+  const [editFormData, setEditFormData] = useState({ roomNumber: '', roomTypeId: '', nightlyCharge: '0', restaurantCharge: '0', accountBalance: '0' })
   const [typeFormData, setTypeFormData] = useState({ name: '', capacity: '', basePrice: '' })
+  const [editTypeFormData, setEditTypeFormData] = useState({ name: '', capacity: '', basePrice: '' })
   const [error, setError] = useState('')
+  const [editError, setEditError] = useState('')
   const [typeError, setTypeError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submittingType, setSubmittingType] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editingType, setEditingType] = useState(false)
   const { isAdmin } = useAuth()
 
   useEffect(() => {
     loadData()
-  }, [])
+  }, [showInactiveRooms, roomTypeOnly])
 
   const loadData = async () => {
     try {
       const [roomsRes, typesRes] = await Promise.all([
-        getRooms(),
+        getRooms(undefined, undefined, showInactiveRooms || roomTypeOnly),
         getRoomTypes()
       ])
       setRooms(roomsRes.data)
@@ -86,6 +103,124 @@ const RoomListPage = () => {
     }
   }
 
+  const handleEditRoom = (room) => {
+    setEditingRoomId(room.id)
+    setEditFormData({
+      roomNumber: room.roomNumber,
+      roomTypeId: String(room.roomType.id),
+      nightlyCharge: room.nightlyCharge ?? '0',
+      restaurantCharge: room.restaurantCharge ?? '0',
+      accountBalance: room.accountBalance ?? '0'
+    })
+    setEditError('')
+    setEditing(true)
+  }
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault()
+    setEditError('')
+
+    if (!editFormData.roomNumber || !editFormData.roomTypeId) {
+      setEditError('Моля, попълнете всички полета')
+      return
+    }
+
+    try {
+      await updateRoom(editingRoomId, {
+        roomNumber: editFormData.roomNumber,
+        roomTypeId: parseInt(editFormData.roomTypeId),
+        nightlyCharge: parseFloat(editFormData.nightlyCharge || 0),
+        restaurantCharge: parseFloat(editFormData.restaurantCharge || 0),
+        accountBalance: parseFloat(editFormData.accountBalance || 0)
+      })
+      setEditingRoomId(null)
+      setEditing(false)
+      setEditFormData({ roomNumber: '', roomTypeId: '', nightlyCharge: '0', restaurantCharge: '0', accountBalance: '0' })
+      await loadData()
+    } catch (err) {
+      setEditError(err.response?.data?.error || 'Неуспешно редактиране на стая')
+    }
+  }
+
+  const handleEditType = (roomType) => {
+    setEditingTypeId(roomType.id)
+    setEditTypeFormData({
+      name: roomType.name,
+      capacity: roomType.capacity,
+      basePrice: roomType.basePrice
+    })
+    setTypeError('')
+    setEditingType(true)
+  }
+
+  const handleEditTypeSubmit = async (e) => {
+    e.preventDefault()
+    setTypeError('')
+
+    if (!editTypeFormData.name || !editTypeFormData.capacity || !editTypeFormData.basePrice) {
+      setTypeError('Моля, попълнете всички полета')
+      return
+    }
+
+    try {
+      await updateRoomType(editingTypeId, {
+        name: editTypeFormData.name,
+        capacity: parseInt(editTypeFormData.capacity),
+        basePrice: parseFloat(editTypeFormData.basePrice)
+      })
+      setEditingTypeId(null)
+      setEditingType(false)
+      setEditTypeFormData({ name: '', capacity: '', basePrice: '' })
+      await loadData()
+    } catch (err) {
+      setTypeError(err.response?.data?.error || 'Неуспешно редактиране на тип стая')
+    }
+  }
+
+  const handleToggleRoomActive = async (room) => {
+    try {
+      await updateRoom(room.id, { active: !room.active })
+      await loadData()
+    } catch (err) {
+      setError(err.response?.data?.error || 'Неуспешна промяна на статуса')
+    }
+  }
+
+  const handleDeleteRoom = async (room) => {
+    if (!window.confirm(`Сигурни ли сте, че искате да изтриете стая ${room.roomNumber}?`)) {
+      return
+    }
+
+    try {
+      await deleteRoom(room.id)
+      await loadData()
+    } catch (err) {
+      setError(err.response?.data?.error || 'Неуспешно изтриване на стая')
+    }
+  }
+
+  const handleToggleRoomTypeActive = async (roomType) => {
+    try {
+      await updateRoomType(roomType.id, { active: !roomType.active })
+      await loadData()
+    } catch (err) {
+      setTypeError(err.response?.data?.error || 'Неуспешна промяна на тип стая')
+    }
+  }
+
+  const handleDeleteRoomType = async (roomType) => {
+    if (!window.confirm(`Сигурни ли сте, че искате да изтриете тип стая ${roomType.name}?`)) {
+      return
+    }
+
+    try {
+      await deleteRoomType(roomType.id)
+      await loadData()
+    } catch (err) {
+      setTypeError(err.response?.data?.error || 'Неуспешно изтриване на тип стая')
+    }
+  }
+
   if (loading) {
     return <div className="page-loading">Зареждане...</div>
   }
@@ -93,32 +228,42 @@ const RoomListPage = () => {
   return (
     <div className="room-list-page">
       <div className="page-header">
-        <h1>Стаи</h1>
+        <h1>{roomTypeOnly ? 'Типове стаи' : 'Стаи'}</h1>
         {isAdmin && (
           <div className="header-buttons">
-            <button 
-              onClick={() => {
-                setShowTypeForm(!showTypeForm)
-                setShowForm(false)
-              }} 
-              className="btn-secondary"
-            >
-              {showTypeForm ? 'Отказ' : '+ Добави тип стая'}
-            </button>
-            <button 
-              onClick={() => {
-                setShowForm(!showForm)
-                setShowTypeForm(false)
-              }} 
-              className="btn-primary"
-            >
-              {showForm ? 'Отказ' : '+ Добави стая'}
-            </button>
+            {roomTypeOnly ? (
+              <button 
+                onClick={() => {
+                  setShowTypeForm(!showTypeForm)
+                  setShowForm(false)
+                }} 
+                className="btn-primary"
+              >
+                {showTypeForm ? 'Отказ' : '+ Добави тип стая'}
+              </button>
+            ) : (
+              <>
+                <button 
+                  onClick={() => {
+                    setShowForm(!showForm)
+                  }} 
+                  className="btn-primary"
+                >
+                  {showForm ? 'Отказ' : '+ Добави стая'}
+                </button>
+                <button 
+                  onClick={() => setShowInactiveRooms(!showInactiveRooms)} 
+                  className="btn-secondary"
+                >
+                  {showInactiveRooms ? 'Скрий неактивни' : 'Покажи неактивни'}
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
 
-      {isAdmin && showTypeForm && (
+      {isAdmin && roomTypeOnly && showTypeForm && (
         <div className="create-room-form">
           <h2>Създай нов тип стая</h2>
           <form onSubmit={handleTypeSubmit}>
@@ -201,24 +346,202 @@ const RoomListPage = () => {
           </form>
         </div>
       )}
+
+      {isAdmin && roomTypeOnly && roomTypes.length > 0 && (
+        <div className="room-type-list">
+          {roomTypes.map(roomType => (
+            <div key={roomType.id} className={`room-type-chip ${roomType.active ? '' : 'inactive'}`}>
+              <div>
+                <strong>{roomType.name}</strong>
+                <span>{roomType.capacity} гости · €{roomType.basePrice}/нощ</span>
+              </div>
+              <div className="room-actions room-type-actions">
+                <button type="button" className="btn-edit" onClick={() => handleEditType(roomType)}>Редактирай</button>
+                <button type="button" className="btn-toggle" onClick={() => handleToggleRoomTypeActive(roomType)}>
+                  {roomType.active ? 'Деактивирай' : 'Активирай'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isAdmin && editingType && (
+        <div className="create-room-form">
+          <h2>Редактирай тип стая</h2>
+          <form onSubmit={handleEditTypeSubmit}>
+            {typeError && <div className="error-message">{typeError}</div>}
+            <div className="form-group">
+              <label>Име</label>
+              <input
+                type="text"
+                value={editTypeFormData.name}
+                onChange={(e) => setEditTypeFormData({ ...editTypeFormData, name: e.target.value })}
+                required
+              />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Капацитет</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={editTypeFormData.capacity}
+                  onChange={(e) => setEditTypeFormData({ ...editTypeFormData, capacity: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Цена (€/нощ)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editTypeFormData.basePrice}
+                  onChange={(e) => setEditTypeFormData({ ...editTypeFormData, basePrice: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="action-row">
+              <button type="submit" className="btn-primary">Запази</button>
+              <button type="button" className="btn-secondary" onClick={() => {
+                setEditingType(false)
+                setEditingTypeId(null)
+                setEditTypeFormData({ name: '', capacity: '', basePrice: '' })
+                setTypeError('')
+              }}>
+                Отказ
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {isAdmin && editing && (
+        <div className="create-room-form">
+          <h2>Редактирай стая</h2>
+          <form onSubmit={handleEditSubmit}>
+            {editError && <div className="error-message">{editError}</div>}
+            <div className="form-group">
+              <label>Номер на стая</label>
+              <input
+                type="text"
+                value={editFormData.roomNumber}
+                onChange={(e) => setEditFormData({ ...editFormData, roomNumber: e.target.value })}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Тип стая</label>
+              <select
+                value={editFormData.roomTypeId}
+                onChange={(e) => setEditFormData({ ...editFormData, roomTypeId: e.target.value })}
+                required
+              >
+                <option value="">Избери тип стая</option>
+                {roomTypes.map(type => (
+                  <option key={type.id} value={type.id}>
+                    {type.name} - Капацитет: {type.capacity}, Цена: €{type.basePrice}/нощ
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Нощувки (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editFormData.nightlyCharge}
+                  onChange={(e) => setEditFormData({ ...editFormData, nightlyCharge: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>Ресторант (€)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editFormData.restaurantCharge}
+                  onChange={(e) => setEditFormData({ ...editFormData, restaurantCharge: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Сметка общо (€)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={editFormData.accountBalance}
+                onChange={(e) => setEditFormData({ ...editFormData, accountBalance: e.target.value })}
+              />
+            </div>
+            <div className="action-row">
+              <button type="submit" className="btn-primary">Запази</button>
+              <button type="button" className="btn-secondary" onClick={() => {
+                setEditing(false)
+                setEditingRoomId(null)
+                setEditFormData({ roomNumber: '', roomTypeId: '', nightlyCharge: '0', restaurantCharge: '0', accountBalance: '0' })
+                setEditError('')
+              }}>
+                Отказ
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
       
-      <div className="room-grid">
-        {rooms.map(room => (
-          <div key={room.id} className={`room-card ${room.active ? '' : 'inactive'}`}>
-            <div className="room-header">
-              <h3>Стая {room.roomNumber}</h3>
-              <span className={`room-status ${room.active ? 'active' : 'inactive'}`}>
-                {room.active ? 'Активна' : 'Неактивна'}
-              </span>
+      {!roomTypeOnly && (
+        <div className="room-grid">
+          {rooms.map(room => (
+            <div key={room.id} className={`room-card ${room.active ? '' : 'inactive'}`}>
+              <div className="room-header">
+                <h3>Стая {room.roomNumber}</h3>
+                <span className={`room-status ${room.active ? 'active' : 'inactive'}`}>
+                  {room.active ? 'Активна' : 'Неактивна'}
+                </span>
+              </div>
+              <div className="room-details">
+                <p><strong>Тип:</strong> {room.roomType.name}</p>
+                <p><strong>Капацитет:</strong> {room.roomType.capacity} гости</p>
+                <p><strong>Цена:</strong> €{room.roomType.basePrice}/нощ</p>
+              </div>
+
+              <div className="room-account">
+                <h4>Сметка</h4>
+                <div className="account-line">
+                  <span>Нощувки</span>
+                  <strong>€{Number(room.nightlyCharge || 0).toFixed(2)}</strong>
+                </div>
+                <div className="account-line">
+                  <span>Ресторант</span>
+                  <strong>€{Number(room.restaurantCharge || 0).toFixed(2)}</strong>
+                </div>
+                <div className="account-line total">
+                  <span>Общо</span>
+                  <strong>€{Number(room.accountBalance || (Number(room.nightlyCharge || 0) + Number(room.restaurantCharge || 0))).toFixed(2)}</strong>
+                </div>
+              </div>
+              {isAdmin && (
+                <div className="room-actions">
+                  <button type="button" className="btn-edit" onClick={() => handleEditRoom(room)}>
+                    Редактирай
+                  </button>
+                  <button type="button" className="btn-toggle" onClick={() => handleToggleRoomActive(room)}>
+                    {room.active ? 'Деактивирай' : 'Активирай'}
+                  </button>
+                  <button type="button" className="btn-delete" onClick={() => handleDeleteRoom(room)}>
+                    Изтрий
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="room-details">
-              <p><strong>Тип:</strong> {room.roomType.name}</p>
-              <p><strong>Капацитет:</strong> {room.roomType.capacity} гости</p>
-              <p><strong>Цена:</strong> €{room.roomType.basePrice}/нощ</p>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
