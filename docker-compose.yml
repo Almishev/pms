@@ -26,7 +26,7 @@ services:
 
   # Backend Service
   backend:
-    image: ${DOCKERHUB_USER:-almishev}/hotel-pms-backend:${PMS_IMAGE_TAG:-latest}
+    image: ${DOCKERHUB_USER:-antonalmishev}/hrs:backend
     build:
       context: ./hotel-pms-backend
       dockerfile: Dockerfile
@@ -59,7 +59,7 @@ services:
 
   # Frontend Service
   frontend:
-    image: ${DOCKERHUB_USER:-almishev}/hotel-pms-frontend:${PMS_IMAGE_TAG:-latest}
+    image: ${DOCKERHUB_USER:-antonalmishev}/hrs:frontend
     build:
       context: ./hotel-pms-frontend
       dockerfile: Dockerfile
