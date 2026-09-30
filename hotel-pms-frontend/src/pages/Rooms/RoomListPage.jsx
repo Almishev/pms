@@ -9,7 +9,7 @@ import {
   updateRoomType,
   deleteRoomType
 } from '../../api/roomApi'
-import { getOpenFolios, updateRestaurantCharge } from '../../api/bookingApi'
+import { getOpenFolios } from '../../api/bookingApi'
 import { useAuth } from '../../auth/AuthContext'
 import './RoomListPage.css'
 
@@ -23,8 +23,6 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
   const [editingRoomId, setEditingRoomId] = useState(null)
   const [editingTypeId, setEditingTypeId] = useState(null)
   const [folios, setFolios] = useState([])
-  const [restaurantDrafts, setRestaurantDrafts] = useState({})
-  const [folioError, setFolioError] = useState('')
   const [formData, setFormData] = useState({ roomNumber: '', roomTypeId: '' })
   const [editFormData, setEditFormData] = useState({ roomNumber: '', roomTypeId: '' })
   const [typeFormData, setTypeFormData] = useState({ name: '', capacity: '', basePrice: '' })
@@ -52,9 +50,6 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
       setRooms(roomsRes.data)
       setRoomTypes(typesRes.data)
       setFolios(foliosRes.data)
-      setRestaurantDrafts(Object.fromEntries(
-        foliosRes.data.map(folio => [folio.bookingId, String(folio.restaurantCharge ?? 0)])
-      ))
     } catch (error) {
       console.error('Error loading rooms:', error)
     } finally {
@@ -212,22 +207,6 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
       await loadData()
     } catch (err) {
       setTypeError(err.response?.data?.error || 'Неуспешно изтриване на тип стая')
-    }
-  }
-
-  const handleRestaurantSave = async (folio) => {
-    setFolioError('')
-    const amount = parseFloat(restaurantDrafts[folio.bookingId])
-    if (Number.isNaN(amount) || amount < 0) {
-      setFolioError('Ресторантът не може да е отрицателен')
-      return
-    }
-
-    try {
-      await updateRestaurantCharge(folio.bookingId, amount)
-      await loadData()
-    } catch (err) {
-      setFolioError(err.response?.data?.error || 'Неуспешна промяна на ресторанта')
     }
   }
 
@@ -474,8 +453,6 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
         </div>
       )}
       
-      {folioError && <div className="error-message">{folioError}</div>}
-
       {!roomTypeOnly && (
         <div className="room-grid">
           {rooms.map(room => (
@@ -502,8 +479,8 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
                     </div>
                   )
                 }
-                const restaurant = parseFloat(restaurantDrafts[folio.bookingId] || 0)
-                const total = Number(folio.nightsTotal || 0) + (Number.isNaN(restaurant) ? 0 : restaurant)
+                const restaurant = Number(folio.restaurantCharge || 0)
+                const total = Number(folio.nightsTotal || 0) + restaurant
                 return (
                   <div className="room-account">
                     <h4>Сметка · {folio.guestName}</h4>
@@ -513,24 +490,12 @@ const RoomListPage = ({ roomTypeOnly = false }) => {
                     </div>
                     <div className="account-line">
                       <span>Ресторант</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={restaurantDrafts[folio.bookingId] ?? ''}
-                        onChange={(e) => setRestaurantDrafts({
-                          ...restaurantDrafts,
-                          [folio.bookingId]: e.target.value
-                        })}
-                      />
+                      <strong>€{restaurant.toFixed(2)}</strong>
                     </div>
                     <div className="account-line total">
                       <span>Общо</span>
                       <strong>€{total.toFixed(2)}</strong>
                     </div>
-                    <button type="button" className="btn-edit" onClick={() => handleRestaurantSave(folio)}>
-                      Запази ресторант
-                    </button>
                   </div>
                 )
               })()}

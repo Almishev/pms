@@ -7,6 +7,8 @@ export const checkIn = (id) => api.post(`/bookings/${id}/check-in`)
 export const checkOut = (id) => api.post(`/bookings/${id}/check-out`)
 export const cancelBooking = (id) => api.post(`/bookings/${id}/cancel`)
 export const getOpenFolios = () => api.get('/bookings/open-folios')
+export const getRestaurantCharges = (id) => api.get(`/bookings/${id}/restaurant-charges`)
+export const addRestaurantCharge = (id, data) => api.post(`/bookings/${id}/restaurant-charges`, data)
 export const updateRestaurantCharge = (id, restaurantCharge) =>
   api.put(`/bookings/${id}/restaurant-charge`, null, { params: { restaurantCharge } })
 export const moveBooking = (id, data) => api.put(`/bookings/${id}/stay`, data)

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getBookings, updateRestaurantCharge } from '../../api/bookingApi'
+import { getBookings, getRestaurantCharges, addRestaurantCharge } from '../../api/bookingApi'
 import { processPayment, getPaymentsByBooking, stornoPayment } from '../../api/paymentApi'
 import { getStayNightsByBooking, updateStayNightsPrice } from '../../api/stayApi'
 import { format } from 'date-fns'
@@ -23,7 +23,9 @@ const PaymentPage = () => {
   const [priceLoading, setPriceLoading] = useState(false)
   const [error, setError] = useState('')
   const [priceError, setPriceError] = useState('')
-  const [restaurantInput, setRestaurantInput] = useState('')
+  const [restaurantCharges, setRestaurantCharges] = useState([])
+  const [manualAmount, setManualAmount] = useState('')
+  const [manualNote, setManualNote] = useState('')
   const [restaurantError, setRestaurantError] = useState('')
   
   // Filtering and sorting
@@ -44,9 +46,11 @@ const PaymentPage = () => {
     if (selectedBooking) {
       loadPayments(selectedBooking.id)
       loadStayNights(selectedBooking.id)
-      setRestaurantInput(String(selectedBooking.restaurantCharge ?? 0))
+      loadRestaurantCharges(selectedBooking.id)
     }
-  }, [selectedBooking])
+    // Зарежда се при смяна на резервацията, не при опресняване на сумата.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBooking?.id])
 
   const loadBookings = async () => {
     try {
@@ -113,22 +117,47 @@ const PaymentPage = () => {
     }
   }
 
+  const loadRestaurantCharges = async (bookingId) => {
+    try {
+      const response = await getRestaurantCharges(bookingId)
+      setRestaurantCharges(response.data.lines || [])
+      const total = response.data.restaurantCharge
+      setSelectedBooking(current => current && current.id === bookingId
+        ? { ...current, restaurantCharge: total }
+        : current)
+      setBookings(current => current.map(booking => booking.id === bookingId
+        ? { ...booking, restaurantCharge: total }
+        : booking))
+    } catch (error) {
+      console.error('Грешка при зареждане на ресторанта:', error)
+      setRestaurantCharges([])
+    }
+  }
+
   const handleRestaurantSave = async (e) => {
     e.preventDefault()
     setRestaurantError('')
-    const amount = parseFloat(restaurantInput)
-    if (Number.isNaN(amount) || amount < 0) {
-      setRestaurantError('Ресторантът не може да е отрицателен')
+    const amount = parseFloat(manualAmount)
+    if (Number.isNaN(amount) || amount <= 0) {
+      setRestaurantError('Въведете сума по-голяма от нула')
       return
     }
 
     try {
-      const response = await updateRestaurantCharge(selectedBooking.id, amount)
-      const updated = response.data
-      setSelectedBooking(updated)
-      setBookings(bookings.map(booking => booking.id === updated.id ? updated : booking))
+      const response = await addRestaurantCharge(selectedBooking.id, {
+        amount,
+        tableName: manualNote.trim() || 'Ръчно'
+      })
+      setRestaurantCharges(response.data.lines || [])
+      const total = response.data.restaurantCharge
+      setSelectedBooking(current => current ? { ...current, restaurantCharge: total } : current)
+      setBookings(current => current.map(booking => booking.id === selectedBooking.id
+        ? { ...booking, restaurantCharge: total }
+        : booking))
+      setManualAmount('')
+      setManualNote('')
     } catch (err) {
-      setRestaurantError(err.response?.data?.error || 'Неуспешна промяна на ресторанта')
+      setRestaurantError(err.response?.data?.error || err.response?.data?.amount || 'Неуспешно добавяне')
     }
   }
 
@@ -392,21 +421,57 @@ const PaymentPage = () => {
               </div>
             </div>
 
-            <form onSubmit={handleRestaurantSave} className="restaurant-form">
-              {restaurantError && <div className="error-message">{restaurantError}</div>}
-              <label>Ресторант (€)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={restaurantInput}
-                onChange={(e) => setRestaurantInput(e.target.value)}
-                disabled={selectedBooking.status === 'CHECKED_OUT'}
-              />
-              {selectedBooking.status !== 'CHECKED_OUT' && (
-                <button type="submit" className="btn-secondary">Запази ресторант</button>
+            <div className="payments-list">
+              <h3>Ресторант</h3>
+              {restaurantCharges.length === 0 ? (
+                <p>Няма ресторантски сметки</p>
+              ) : (
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Дата</th>
+                      <th>Маса</th>
+                      <th>Източник</th>
+                      <th>Сума</th>
+                      <th>Сторно</th>
+                      <th>Остатък</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {restaurantCharges.map(charge => (
+                      <tr key={charge.id}>
+                        <td>{charge.createdAt ? format(new Date(charge.createdAt), 'dd MMM, yyyy HH:mm') : ''}</td>
+                        <td>{charge.tableName || '—'}</td>
+                        <td>{charge.source === 'POS' ? 'Ресторант' : 'Ръчно'}</td>
+                        <td>€{Number(charge.amount || 0).toFixed(2)}</td>
+                        <td>€{Number(charge.reversedAmount || 0).toFixed(2)}</td>
+                        <td>€{Number(charge.activeAmount || 0).toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
-            </form>
+              {selectedBooking.status !== 'CHECKED_OUT' && selectedBooking.status !== 'CANCELLED' && (
+                <form onSubmit={handleRestaurantSave} className="restaurant-form">
+                  {restaurantError && <div className="error-message">{restaurantError}</div>}
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={manualAmount}
+                    onChange={(e) => setManualAmount(e.target.value)}
+                    placeholder="Сума"
+                  />
+                  <input
+                    type="text"
+                    value={manualNote}
+                    onChange={(e) => setManualNote(e.target.value)}
+                    placeholder="Маса / бележка"
+                  />
+                  <button type="submit" className="btn-secondary">Добави</button>
+                </form>
+              )}
+            </div>
 
             <div className="payments-list">
               <h3>История на плащанията</h3>
