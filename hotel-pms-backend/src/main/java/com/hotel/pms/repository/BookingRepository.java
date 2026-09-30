@@ -13,6 +13,7 @@ import java.util.List;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByStatus(BookingStatus status);
+    List<Booking> findByRoomIdAndStatusNot(Long roomId, BookingStatus status);
     boolean existsByRoomId(Long roomId);
     
     @Query("SELECT b FROM Booking b WHERE b.room.id = :roomId " +

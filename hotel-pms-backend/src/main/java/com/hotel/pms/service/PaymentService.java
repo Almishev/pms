@@ -140,7 +140,7 @@ public class PaymentService {
         return fiscalReceiptRepository.save(stornoReceipt);
     }
 
-    private BigDecimal remainingBalance(Booking booking) {
+    public BigDecimal remainingBalance(Booking booking) {
         BigDecimal nights = stayNightRepository.findByBookingId(booking.getId()).stream()
                 .map(StayNight::getPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);

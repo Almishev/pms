@@ -86,7 +86,7 @@ public class ReportService {
     }
 
     public Map<String, Object> getOccupancyReport(LocalDate startDate, LocalDate endDate) {
-        List<StayNight> stayNights = stayNightRepository.findByStayDateBetween(startDate, endDate);
+        List<StayNight> stayNights = actualStays(startDate, endDate);
         List<Room> rooms = roomRepository.findByActiveTrue();
         int capacity = rooms.size();
         long days = ChronoUnit.DAYS.between(startDate, endDate) + 1;
@@ -94,7 +94,8 @@ public class ReportService {
         List<Map<String, Object>> byDate = new ArrayList<>();
         LocalDate current = startDate;
         while (!current.isAfter(endDate)) {
-            long occupied = stayNightRepository.countByStayDate(current);
+            final LocalDate date = current;
+            long occupied = stayNights.stream().filter(night -> night.getStayDate().equals(date)).count();
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("date", current);
             row.put("occupied", occupied);
@@ -140,7 +141,7 @@ public class ReportService {
     }
 
     public Map<String, Object> getNightsReport(LocalDate startDate, LocalDate endDate) {
-        List<StayNight> stayNights = stayNightRepository.findByStayDateBetween(startDate, endDate);
+        List<StayNight> stayNights = actualStays(startDate, endDate);
 
         BigDecimal totalRevenue = stayNights.stream()
                 .map(StayNight::getPrice)
@@ -179,9 +180,9 @@ public class ReportService {
     public Map<String, Object> getNsiReport(YearMonth month) {
         LocalDate start = month.atDay(1);
         LocalDate end = month.atEndOfMonth();
-        List<StayNight> stayNights = stayNightRepository.findByStayDateBetween(start, end);
+        List<StayNight> stayNights = actualStays(start, end);
         List<Booking> arrivals = bookingRepository.findAll().stream()
-                .filter(booking -> booking.getStatus() != BookingStatus.CANCELLED)
+                .filter(this::arrived)
                 .filter(booking -> !booking.getCheckInDate().isBefore(start) && !booking.getCheckInDate().isAfter(end))
                 .collect(Collectors.toList());
 
@@ -230,6 +231,17 @@ public class ReportService {
         return report;
     }
 
+    private List<StayNight> actualStays(LocalDate startDate, LocalDate endDate) {
+        return stayNightRepository.findByStayDateBetween(startDate, endDate).stream()
+                .filter(night -> arrived(night.getBooking()))
+                .toList();
+    }
+
+    private boolean arrived(Booking booking) {
+        return booking.getStatus() == BookingStatus.CHECKED_IN
+                || booking.getStatus() == BookingStatus.CHECKED_OUT;
+    }
+
     private String roomTypeName(StayNight night) {
         return night.getBooking().getRoom().getRoomType().getName();
     }
@@ -266,7 +278,8 @@ public class ReportService {
         List<Room> allRooms = roomRepository.findByActiveTrue();
         List<Booking> bookings = bookingRepository.findAll().stream()
                 .filter(b -> b.getStatus() != BookingStatus.CANCELLED)
-                .filter(b -> !b.getCheckOutDate().isBefore(startDate) && !b.getCheckInDate().isAfter(endDate))
+                .filter(b -> StayPeriod.occupiedUntil(b.getStatus(), b.getCheckOutDate(), LocalDate.now()).isAfter(startDate)
+                        && !b.getCheckInDate().isAfter(endDate))
                 .collect(Collectors.toList());
 
         Map<String, Map<String, Object>> calendar = new HashMap<>();
@@ -280,16 +293,17 @@ public class ReportService {
             
             for (Room room : allRooms) {
                 final Long roomId = room.getId(); // Make final for use in lambda
-                boolean isOccupied = bookings.stream().anyMatch(b ->
-                    b.getRoom().getId().equals(roomId) &&
-                    StayPeriod.overlaps(b.getCheckInDate(), b.getCheckOutDate(), date, date.plusDays(1))
-                );
-                
                 Booking booking = bookings.stream()
                     .filter(b -> b.getRoom().getId().equals(roomId) &&
-                               StayPeriod.overlaps(b.getCheckInDate(), b.getCheckOutDate(), date, date.plusDays(1)))
-                    .findFirst()
+                               StayPeriod.overlaps(
+                                       b.getCheckInDate(),
+                                       StayPeriod.occupiedUntil(b.getStatus(), b.getCheckOutDate(), LocalDate.now()),
+                                       date,
+                                       date.plusDays(1)))
+                    .min(Comparator.comparingInt(b -> b.getStatus() == BookingStatus.CHECKED_IN ? 0 : 1))
                     .orElse(null);
+
+                boolean isOccupied = booking != null;
                 
                 Map<String, Object> roomStatus = new HashMap<>();
                 roomStatus.put("occupied", isOccupied);

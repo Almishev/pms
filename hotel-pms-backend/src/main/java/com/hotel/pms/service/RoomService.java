@@ -2,7 +2,7 @@ package com.hotel.pms.service;
 
 import com.hotel.pms.model.entity.Room;
 import com.hotel.pms.model.entity.RoomType;
-import com.hotel.pms.model.entity.Booking;
+import com.hotel.pms.model.enums.BookingStatus;
 import com.hotel.pms.repository.RoomRepository;
 import com.hotel.pms.repository.RoomTypeRepository;
 import com.hotel.pms.repository.BookingRepository;
@@ -170,9 +170,13 @@ public class RoomService {
     }
 
     private boolean isRoomAvailable(Long roomId, LocalDate checkInDate, LocalDate checkOutDate) {
-        List<Booking> overlapping = bookingRepository.findOverlappingBookings(
-                roomId, checkInDate, checkOutDate);
-        return overlapping.isEmpty();
+        LocalDate today = LocalDate.now();
+        return bookingRepository.findByRoomIdAndStatusNot(roomId, BookingStatus.CANCELLED).stream()
+                .noneMatch(booking -> StayPeriod.overlaps(
+                        booking.getCheckInDate(),
+                        StayPeriod.occupiedUntil(booking.getStatus(), booking.getCheckOutDate(), today),
+                        checkInDate,
+                        checkOutDate));
     }
 }
 

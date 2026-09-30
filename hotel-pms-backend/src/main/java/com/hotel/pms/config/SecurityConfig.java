@@ -1,5 +1,6 @@
 package com.hotel.pms.config;
 
+import com.hotel.pms.security.IntegrationKeyFilter;
 import com.hotel.pms.security.jwt.JwtAuthenticationEntryPoint;
 import com.hotel.pms.security.jwt.JwtAuthenticationFilter;
 import com.hotel.pms.security.userdetails.CustomUserDetailsService;
@@ -36,6 +37,9 @@ public class SecurityConfig {
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Autowired
+    private IntegrationKeyFilter integrationKeyFilter;
 
     @Value("${cors.allowed-origins:http://localhost:3003}")
     private String allowedOrigins;
@@ -81,11 +85,13 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/integration/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 );
 
         http.authenticationProvider(authenticationProvider());
+        http.addFilterBefore(integrationKeyFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

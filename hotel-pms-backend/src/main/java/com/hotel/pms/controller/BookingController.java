@@ -1,10 +1,13 @@
 package com.hotel.pms.controller;
 
 import com.hotel.pms.model.dto.CreateBookingDto;
+import com.hotel.pms.model.dto.ManualRestaurantChargeDto;
 import com.hotel.pms.model.dto.MoveBookingDto;
 import com.hotel.pms.model.dto.OpenFolioDto;
+import com.hotel.pms.model.dto.RestaurantChargesView;
 import com.hotel.pms.model.entity.Booking;
 import com.hotel.pms.service.BookingService;
+import com.hotel.pms.service.RestaurantFolioService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -21,6 +24,9 @@ import java.util.List;
 public class BookingController {
     @Autowired
     private BookingService bookingService;
+
+    @Autowired
+    private RestaurantFolioService restaurantFolioService;
 
     @GetMapping
     public ResponseEntity<List<Booking>> getAllBookings() {
@@ -62,11 +68,23 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.moveBooking(id, dto));
     }
 
+    @GetMapping("/{id}/restaurant-charges")
+    public ResponseEntity<RestaurantChargesView> getRestaurantCharges(@PathVariable Long id) {
+        return ResponseEntity.ok(restaurantFolioService.listCharges(id));
+    }
+
+    @PostMapping("/{id}/restaurant-charges")
+    public ResponseEntity<RestaurantChargesView> addRestaurantCharge(
+            @PathVariable Long id,
+            @Valid @RequestBody ManualRestaurantChargeDto dto) {
+        return ResponseEntity.ok(restaurantFolioService.addManualCharge(id, dto));
+    }
+
     @PutMapping("/{id}/restaurant-charge")
-    public ResponseEntity<Booking> updateRestaurantCharge(
+    public ResponseEntity<RestaurantChargesView> updateRestaurantCharge(
             @PathVariable Long id,
             @RequestParam BigDecimal restaurantCharge) {
-        return ResponseEntity.ok(bookingService.updateRestaurantCharge(id, restaurantCharge));
+        return ResponseEntity.ok(restaurantFolioService.setRestaurantTotal(id, restaurantCharge));
     }
 
     @GetMapping("/date-range")

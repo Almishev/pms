@@ -40,6 +40,9 @@ public class BookingService {
     @Autowired
     private StayService stayService;
 
+    @Autowired
+    private PaymentService paymentService;
+
     @Transactional
     public Booking createBooking(CreateBookingDto dto) {
         // Validate dates
@@ -60,14 +63,7 @@ public class BookingService {
         }
 
         Guest guest = resolveGuest(dto);
-
-        // Check for overlapping bookings
-        List<Booking> overlapping = bookingRepository.findOverlappingBookings(
-                dto.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate());
-
-        if (!overlapping.isEmpty()) {
-            throw new BusinessException("Room is already booked for the selected dates");
-        }
+        assertRoomFree(dto.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate(), null);
 
         // Get current user
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -115,6 +111,15 @@ public class BookingService {
             throw new BusinessException("Cannot check in before check-in date");
         }
 
+        boolean otherGuestInRoom = bookingRepository
+                .findByRoomIdAndStatusNot(booking.getRoom().getId(), BookingStatus.CANCELLED)
+                .stream()
+                .anyMatch(other -> other.getStatus() == BookingStatus.CHECKED_IN
+                        && !other.getId().equals(booking.getId()));
+        if (otherGuestInRoom) {
+            throw new BusinessException("В стаята вече има настанен гост");
+        }
+
         booking.setStatus(BookingStatus.CHECKED_IN);
         return bookingRepository.save(booking);
     }
@@ -125,6 +130,12 @@ public class BookingService {
         
         if (booking.getStatus() != BookingStatus.CHECKED_IN) {
             throw new BusinessException("Only checked-in reservations can be checked out");
+        }
+
+        BigDecimal remaining = paymentService.remainingBalance(booking);
+        if (remaining.compareTo(BigDecimal.ZERO) > 0) {
+            throw new BusinessException("Има неплатена сума от €" + remaining
+                    + ". Напускането е отказано.");
         }
 
         booking.setStatus(BookingStatus.CHECKED_OUT);
@@ -165,11 +176,7 @@ public class BookingService {
             throw new BusinessException("Room is not active");
         }
 
-        List<Booking> overlapping = bookingRepository.findOverlappingBookingsExcluding(
-                dto.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate(), bookingId);
-        if (!overlapping.isEmpty()) {
-            throw new BusinessException("Стаята е заета за избраните дати");
-        }
+        assertRoomFree(dto.getRoomId(), dto.getCheckInDate(), dto.getCheckOutDate(), bookingId);
 
         BigDecimal price = stayService.getStayNightsByBooking(bookingId).stream()
                 .map(StayNight::getPrice)
@@ -183,21 +190,6 @@ public class BookingService {
         booking = bookingRepository.save(booking);
         stayService.generateStayNights(booking, price);
         return booking;
-    }
-
-    @Transactional
-    public Booking updateRestaurantCharge(Long bookingId, BigDecimal restaurantCharge) {
-        if (restaurantCharge == null || restaurantCharge.compareTo(BigDecimal.ZERO) < 0) {
-            throw new BusinessException("Restaurant charge cannot be negative");
-        }
-
-        Booking booking = getBookingById(bookingId);
-        if (booking.getStatus() == BookingStatus.CANCELLED || booking.getStatus() == BookingStatus.CHECKED_OUT) {
-            throw new BusinessException("Cannot change restaurant charge for this reservation");
-        }
-
-        booking.setRestaurantCharge(restaurantCharge);
-        return bookingRepository.save(booking);
     }
 
     public List<com.hotel.pms.model.dto.OpenFolioDto> getOpenFolios() {
@@ -220,6 +212,20 @@ public class BookingService {
                     return folio;
                 })
                 .toList();
+    }
+
+    private void assertRoomFree(Long roomId, LocalDate checkIn, LocalDate checkOut, Long excludeBookingId) {
+        LocalDate today = LocalDate.now();
+        boolean taken = bookingRepository.findByRoomIdAndStatusNot(roomId, BookingStatus.CANCELLED).stream()
+                .filter(other -> excludeBookingId == null || !excludeBookingId.equals(other.getId()))
+                .anyMatch(other -> StayPeriod.overlaps(
+                        other.getCheckInDate(),
+                        StayPeriod.occupiedUntil(other.getStatus(), other.getCheckOutDate(), today),
+                        checkIn,
+                        checkOut));
+        if (taken) {
+            throw new BusinessException("Стаята е заета за избраните дати");
+        }
     }
 
     private Guest resolveGuest(CreateBookingDto dto) {
